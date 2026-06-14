@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "AI Interviewer",
+    "slug": "ai-interviewer",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "platforms": ["android"],
+    "android": {
+      "package": "com.yourname.aiinterviewer",
+      "versionCode": 1,
+      "permissions": [
+        "RECORD_AUDIO",
+        "INTERNET"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Allow AI Interviewer to access your microphone for voice interviews."
+        }
+      ]
+    ]
+  }
+}
