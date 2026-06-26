@@ -3,6 +3,7 @@
     "name": "AI Interviewer",
     "slug": "ai-interviewer",
     "version": "1.0.0",
+    "sdkVersion": "54.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -17,7 +18,8 @@
       "versionCode": 1,
       "permissions": [
         "RECORD_AUDIO",
-        "INTERNET"
+        "INTERNET",
+        "DETECT_SCREEN_CAPTURE"
       ]
     },
     "plugins": [
