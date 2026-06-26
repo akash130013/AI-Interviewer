@@ -1,4 +1,4 @@
-import OpenAI from "openai";
+const OpenAI = require("openai");
 
 function buildSystemPrompt(ctx) {
   return `
@@ -30,7 +30,6 @@ job interview and help the candidate improve their interview skills.
 7. Keep your tone professional but warm.
 
 ## Scoring rubric (internal only — 1 to 5 per answer)
-Score each answer across four dimensions, then average:
 - Clarity (1–5): Is the answer structured and easy to follow?
 - Relevance (1–5): Does it directly address the question?
 - Depth (1–5): Does it go beyond surface level with examples and metrics?
@@ -59,7 +58,7 @@ When the interview ends, output ONLY this JSON (no other text):
 }`.trim();
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -73,10 +72,11 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Missing messages or candidateContext" });
   }
 
+  if (!process.env.OPENAI_API_KEY) {
+    return res.status(500).json({ error: "OPENAI_API_KEY not set in Vercel environment variables" });
+  }
+
   try {
-    if (!process.env.OPENAI_API_KEY) {
-      return res.status(500).json({ error: "OPENAI_API_KEY is not set in Vercel environment variables" });
-    }
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
@@ -91,7 +91,7 @@ export default async function handler(req, res) {
     const reply = completion.choices[0].message.content;
     return res.status(200).json({ reply });
   } catch (err) {
-    console.error("OpenAI error:", err);
-    return res.status(500).json({ error: "AI call failed" });
+    console.error("OpenAI error:", err.message);
+    return res.status(500).json({ error: err.message });
   }
-}
+};
