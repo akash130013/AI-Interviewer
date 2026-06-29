@@ -8,7 +8,7 @@ const DEEPGRAM_KEY = process.env.EXPO_PUBLIC_DEEPGRAM_KEY;
 export async function transcribeAudio(fileUri) {
   try {
     const base64Audio = await FileSystem.readAsStringAsync(fileUri, {
-      encoding: FileSystem.EncodingType.Base64,
+      encoding: "base64",
     });
 
     const binaryString = atob(base64Audio);
