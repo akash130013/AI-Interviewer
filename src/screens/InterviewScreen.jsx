@@ -64,6 +64,17 @@ export default function InterviewScreen({ route, navigation }) {
 
   async function handleEndInterview() {
     Speech.stop();
+
+    // If the last AI message already contains a report JSON, use it directly
+    const lastAiMsg = [...messages].reverse().find((m) => m.role === "assistant");
+    if (lastAiMsg) {
+      const existingReport = extractReport(lastAiMsg.content);
+      if (existingReport) {
+        navigation.navigate("Report", { report: existingReport });
+        return;
+      }
+    }
+
     const endMsgs = [...messages, { role: "user", content: "End interview" }];
     await callAI(endMsgs);
   }
