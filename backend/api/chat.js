@@ -92,7 +92,20 @@ module.exports = async function handler(req, res) {
       max_tokens: 700,
     });
 
-    const reply = completion.choices[0].message.content;
+    let reply = completion.choices[0].message.content;
+
+    // If the reply contains a report JSON, strip any preamble/markdown so the
+    // client receives clean JSON that JSON.parse() can handle directly.
+    const jsonMatch = reply.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (parsed.overall_score !== undefined) {
+          reply = jsonMatch[0];
+        }
+      } catch (_) {}
+    }
+
     return res.status(200).json({ reply });
   } catch (err) {
     console.error("Groq error:", err.message);
