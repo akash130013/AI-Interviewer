@@ -1,7 +1,7 @@
 // src/lib/deepgram.js
 // Sends recorded audio to Deepgram and returns the transcript text
 
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 
 const DEEPGRAM_KEY = process.env.EXPO_PUBLIC_DEEPGRAM_KEY;
 
