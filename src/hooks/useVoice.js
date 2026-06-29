@@ -12,6 +12,12 @@ export function useVoice() {
 
   async function startRecording() {
     try {
+      // Clean up any leftover recording object from a previous session
+      if (recordingRef.current) {
+        try { await recordingRef.current.stopAndUnloadAsync(); } catch (_) {}
+        recordingRef.current = null;
+      }
+
       const { granted } = await Audio.requestPermissionsAsync();
       if (!granted) {
         alert("Microphone permission is required for voice interviews.");
