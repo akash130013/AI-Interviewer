@@ -1,4 +1,4 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { OpenAI } = require("openai");
 
 function buildSystemPrompt(ctx) {
   return `
@@ -72,44 +72,30 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: "Missing messages or candidateContext" });
   }
 
-  if (!process.env.GEMINI_API_KEY) {
-    return res.status(500).json({ error: "GEMINI_API_KEY not set in Vercel environment variables" });
+  if (!process.env.GROQ_API_KEY) {
+    return res.status(500).json({ error: "GROQ_API_KEY not set in Vercel environment variables" });
   }
 
   try {
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel(
-      { model: "gemini-1.5-flash" },
-      { apiVersion: "v1" }
-    );
+    const client = new OpenAI({
+      apiKey: process.env.GROQ_API_KEY,
+      baseURL: "https://api.groq.com/openai/v1",
+    });
 
-    // Inject system prompt as first conversation turn (v1 doesn't support systemInstruction field)
-    const systemHistory = [
-      { role: "user", parts: [{ text: `[SYSTEM INSTRUCTIONS]\n\n${buildSystemPrompt(candidateContext)}` }] },
-      { role: "model", parts: [{ text: "Understood. I am Alex, your professional interviewer. I will follow these instructions exactly." }] },
-    ];
+    const completion = await client.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
+      messages: [
+        { role: "system", content: buildSystemPrompt(candidateContext) },
+        ...messages,
+      ],
+      temperature: 0.7,
+      max_tokens: 700,
+    });
 
-    // Convert remaining OpenAI messages to Gemini format (all except last)
-    const conversationHistory = messages.length > 1
-      ? messages.slice(0, -1).map((msg) => ({
-          role: msg.role === "assistant" ? "model" : "user",
-          parts: [{ text: msg.content }],
-        }))
-      : [];
-
-    const chat = model.startChat({ history: [...systemHistory, ...conversationHistory] });
-
-    const currentMessage =
-      messages.length > 0
-        ? messages[messages.length - 1].content
-        : "Please begin the interview. Introduce yourself as Alex and ask the first question.";
-
-    const result = await chat.sendMessage(currentMessage);
-    const reply = result.response.text();
-
+    const reply = completion.choices[0].message.content;
     return res.status(200).json({ reply });
   } catch (err) {
-    console.error("Gemini error:", err.message);
+    console.error("Groq error:", err.message);
     return res.status(500).json({ error: err.message });
   }
 };
