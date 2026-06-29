@@ -1,4 +1,4 @@
-const { OpenAI } = require("openai");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 function buildSystemPrompt(ctx) {
   return `
@@ -72,26 +72,40 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: "Missing messages or candidateContext" });
   }
 
-  if (!process.env.OPENAI_API_KEY) {
-    return res.status(500).json({ error: "OPENAI_API_KEY not set in Vercel environment variables" });
+  if (!process.env.GEMINI_API_KEY) {
+    return res.status(500).json({ error: "GEMINI_API_KEY not set in Vercel environment variables" });
   }
 
   try {
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: buildSystemPrompt(candidateContext) },
-        ...messages,
-      ],
-      temperature: 0.7,
-      max_tokens: 700,
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.0-flash",
+      systemInstruction: buildSystemPrompt(candidateContext),
     });
 
-    const reply = completion.choices[0].message.content;
+    // Convert OpenAI message format to Gemini format
+    // History = all messages except the last one
+    const history = messages.length > 1
+      ? messages.slice(0, -1).map((msg) => ({
+          role: msg.role === "assistant" ? "model" : "user",
+          parts: [{ text: msg.content }],
+        }))
+      : [];
+
+    const chat = model.startChat({ history });
+
+    // Current message = last in array, or a start prompt if empty
+    const currentMessage =
+      messages.length > 0
+        ? messages[messages.length - 1].content
+        : "Please begin the interview. Introduce yourself as Alex and ask the first question.";
+
+    const result = await chat.sendMessage(currentMessage);
+    const reply = result.response.text();
+
     return res.status(200).json({ reply });
   } catch (err) {
-    console.error("OpenAI error:", err.message);
+    console.error("Gemini error:", err.message);
     return res.status(500).json({ error: err.message });
   }
 };
