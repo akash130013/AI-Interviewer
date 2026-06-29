@@ -21,9 +21,27 @@ export async function sendMessage(messages, candidateContext) {
 
 // Returns the parsed report object if the AI sent the final JSON, else null
 export function extractReport(text) {
+  // Try plain JSON first
   try {
     const parsed = JSON.parse(text);
     if (parsed.overall_score !== undefined) return parsed;
   } catch (_) {}
+
+  // Strip markdown code fences (```json ... ``` or ``` ... ```)
+  try {
+    const stripped = text.replace(/```(?:json)?\n?/g, "").trim();
+    const parsed = JSON.parse(stripped);
+    if (parsed.overall_score !== undefined) return parsed;
+  } catch (_) {}
+
+  // Extract first {...} block from mixed text
+  try {
+    const match = text.match(/\{[\s\S]*\}/);
+    if (match) {
+      const parsed = JSON.parse(match[0]);
+      if (parsed.overall_score !== undefined) return parsed;
+    }
+  } catch (_) {}
+
   return null;
 }
