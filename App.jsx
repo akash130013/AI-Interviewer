@@ -33,16 +33,11 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {!session ? (
-          <Stack.Screen name="Login" component={LoginScreen} />
-        ) : (
-          <>
-            <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-            <Stack.Screen name="Interview" component={InterviewScreen} />
-            <Stack.Screen name="Report" component={ReportScreen} />
-            <Stack.Screen name="History" component={HistoryScreen} />
-          </>
-        )}
+        <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+        <Stack.Screen name="Interview" component={InterviewScreen} />
+        <Stack.Screen name="Report" component={ReportScreen} />
+        <Stack.Screen name="History" component={HistoryScreen} />
+        <Stack.Screen name="Login" component={LoginScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
