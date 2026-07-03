@@ -1,8 +1,9 @@
 import { useState } from "react";
 import {
   View, Text, TextInput, TouchableOpacity,
-  ScrollView, StyleSheet, KeyboardAvoidingView, Platform,
+  ScrollView, StyleSheet, KeyboardAvoidingView, Platform, Alert,
 } from "react-native";
+import { supabase } from "../lib/supabase";
 
 export default function OnboardingScreen({ navigation }) {
   const [form, setForm] = useState({
@@ -15,10 +16,14 @@ export default function OnboardingScreen({ navigation }) {
 
   function handleStart() {
     if (!form.role.trim()) {
-      alert("Please enter the role you are applying for.");
+      Alert.alert("Required", "Please enter the role you are applying for.");
       return;
     }
     navigation.navigate("Interview", { candidateContext: form });
+  }
+
+  async function handleSignOut() {
+    await supabase.auth.signOut();
   }
 
   return (
@@ -27,7 +32,17 @@ export default function OnboardingScreen({ navigation }) {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.title}>Set up your interview</Text>
+        <View style={styles.topRow}>
+          <Text style={styles.title}>Set up your interview</Text>
+          <View style={styles.topActions}>
+            <TouchableOpacity onPress={() => navigation.navigate("History")}>
+              <Text style={styles.topLink}>History</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleSignOut}>
+              <Text style={styles.topLink}>Sign out</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
         <Text style={styles.subtitle}>
           The more context you give, the more relevant the questions will be.
         </Text>
@@ -103,7 +118,10 @@ export default function OnboardingScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
   scroll: { padding: 24, paddingTop: 60 },
-  title: { fontSize: 26, fontWeight: "600", marginBottom: 8, color: "#111" },
+  topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 },
+  topActions: { flexDirection: "row", gap: 14, paddingTop: 4 },
+  topLink: { fontSize: 13, color: "#888" },
+  title: { fontSize: 26, fontWeight: "600", color: "#111", flex: 1 },
   subtitle: { fontSize: 14, color: "#666", marginBottom: 28, lineHeight: 20 },
   label: { fontSize: 13, fontWeight: "500", color: "#444", marginBottom: 8, marginTop: 20 },
   input: {

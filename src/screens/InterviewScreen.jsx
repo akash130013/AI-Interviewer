@@ -6,16 +6,15 @@ import {
 import * as Speech from "expo-speech";
 import { useVoice } from "../hooks/useVoice";
 import { sendMessage, extractReport } from "../lib/openai";
+import { supabase, saveInterview } from "../lib/supabase";
 
 export default function InterviewScreen({ route, navigation }) {
   const { candidateContext } = route.params;
   const [messages, setMessages] = useState([]);
-  // status: "thinking" | "speaking" | "idle" | "listening"
   const [status, setStatus] = useState("thinking");
   const flatListRef = useRef(null);
   const { isRecording, isTranscribing, startRecording, stopRecording } = useVoice();
 
-  // Kick off the interview — AI sends the first greeting
   useEffect(() => {
     callAI([]);
   }, []);
@@ -25,9 +24,11 @@ export default function InterviewScreen({ route, navigation }) {
     try {
       const reply = await sendMessage(msgs, candidateContext);
 
+      // Check for report BEFORE speaking or adding to messages
       const report = extractReport(reply);
       if (report) {
-        navigation.navigate("Report", { report });
+        Speech.stop();
+        await handleReportReceived(report);
         return;
       }
 
@@ -48,6 +49,18 @@ export default function InterviewScreen({ route, navigation }) {
     }
   }
 
+  async function handleReportReceived(report) {
+    // Save to Supabase if user is logged in
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await saveInterview(session.user.id, candidateContext, report);
+      }
+    } catch (_) {}
+
+    navigation.navigate("Report", { report });
+  }
+
   async function handleMicPress() {
     if (isRecording) {
       const transcript = await stopRecording();
@@ -65,17 +78,17 @@ export default function InterviewScreen({ route, navigation }) {
   async function handleEndInterview() {
     Speech.stop();
 
-    // If the last AI message already contains a report JSON, use it directly
+    // If the last AI message already has a report, use it directly
     const lastAiMsg = [...messages].reverse().find((m) => m.role === "assistant");
     if (lastAiMsg) {
       const existingReport = extractReport(lastAiMsg.content);
       if (existingReport) {
-        navigation.navigate("Report", { report: existingReport });
+        await handleReportReceived(existingReport);
         return;
       }
     }
 
-    const endMsgs = [...messages, { role: "user", content: "End interview" }];
+    const endMsgs = [...messages, { role: "user", content: "end interview" }];
     await callAI(endMsgs);
   }
 
@@ -91,7 +104,6 @@ export default function InterviewScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Interview with Alex</Text>
         <Text style={styles.headerSub}>
@@ -100,7 +112,6 @@ export default function InterviewScreen({ route, navigation }) {
         </Text>
       </View>
 
-      {/* Chat */}
       <FlatList
         ref={flatListRef}
         data={messages}
@@ -116,7 +127,6 @@ export default function InterviewScreen({ route, navigation }) {
         )}
       />
 
-      {/* Controls */}
       <View style={styles.controls}>
         <Text style={styles.statusText}>{getStatusLabel()}</Text>
 

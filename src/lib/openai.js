@@ -1,7 +1,3 @@
-// src/lib/openai.js
-// Calls the Vercel backend which then calls OpenAI.
-// The OpenAI API key lives ONLY on the server — never in the app.
-
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export async function sendMessage(messages, candidateContext) {
@@ -19,22 +15,26 @@ export async function sendMessage(messages, candidateContext) {
   return reply;
 }
 
-// Returns the parsed report object if the AI sent the final JSON, else null
 export function extractReport(text) {
-  // Try plain JSON first
+  if (!text) return null;
+
+  // Quick bail-out: if no overall_score key, definitely not a report
+  if (!text.includes('"overall_score"')) return null;
+
+  // Try 1: plain JSON
   try {
     const parsed = JSON.parse(text);
     if (parsed.overall_score !== undefined) return parsed;
   } catch (_) {}
 
-  // Strip markdown code fences (```json ... ``` or ``` ... ```)
+  // Try 2: strip markdown fences then parse
   try {
     const stripped = text.replace(/```(?:json)?\n?/g, "").trim();
     const parsed = JSON.parse(stripped);
     if (parsed.overall_score !== undefined) return parsed;
   } catch (_) {}
 
-  // Extract first {...} block from mixed text
+  // Try 3: extract first {...} block (handles preamble text)
   try {
     const match = text.match(/\{[\s\S]*\}/);
     if (match) {
