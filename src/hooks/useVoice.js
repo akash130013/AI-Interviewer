@@ -1,6 +1,3 @@
-// src/hooks/useVoice.js
-// Handles microphone recording and sending audio to Deepgram for transcription
-
 import { useState, useRef } from "react";
 import { Audio } from "expo-av";
 import { transcribeAudio } from "../lib/deepgram";
@@ -12,7 +9,7 @@ export function useVoice() {
 
   async function startRecording() {
     try {
-      // Clean up any leftover recording object from a previous session
+      // Unload any stale recording left from a previous session
       if (recordingRef.current) {
         try { await recordingRef.current.stopAndUnloadAsync(); } catch (_) {}
         recordingRef.current = null;
@@ -24,6 +21,9 @@ export function useVoice() {
         return;
       }
 
+      // Reset audio session first (prevents "Only one Recording" error when
+      // TTS playback was active just before this recording attempt)
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
@@ -50,6 +50,9 @@ export function useVoice() {
       await recordingRef.current.stopAndUnloadAsync();
       const uri = recordingRef.current.getURI();
       recordingRef.current = null;
+
+      // Return audio mode to playback so expo-speech works normally
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
 
       const transcript = await transcribeAudio(uri);
       return transcript;

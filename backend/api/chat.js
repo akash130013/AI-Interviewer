@@ -39,6 +39,7 @@ Then immediately ask your next question. You must NEVER say things like:
 
 RULE 3 — Ask exactly ${questionCount} questions in this order:
 ${questionPlan}
+You MUST stop after question ${questionCount}. Do NOT ask a ${questionCount + 1}th question under any circumstances.
 
 RULE 4 — Adapt difficulty based on internal scores (1–5 per answer, never shown):
   Two consecutive 4–5 → increase difficulty
@@ -49,6 +50,12 @@ RULE 5 — CRITICAL: After the ${questionCount}th answer OR if the candidate say
   Do NOT write any text before or after the JSON.
   Do NOT wrap it in markdown or code blocks.
   Start your response with { and end with }.
+
+RULE 6 — TOPIC CHANGE ON "I DON'T KNOW": If the candidate says they don't know,
+  have no idea, haven't worked with, or are unfamiliar with the topic of your question,
+  do NOT ask a follow-up or related question on that same topic.
+  Move immediately to the next planned question category.
+  Give it an internal score of 2 and continue.
 
 ## REPORT FORMAT (output ONLY this, nothing else, when interview ends)
 {"overall_score":<1-100>,"summary":"<2-3 sentence assessment>","questions":[{"question":"<exact question>","answer_summary":"<1 sentence>","score":<1-10>,"strengths":["<s1>","<s2>"],"improvements":["<i1>","<i2>"],"sample_better_answer":"<example>"}],"top_3_strengths":["<s>","<s>","<s>"],"top_3_improvements":["<i>","<i>","<i>"],"interview_readiness_percent":<0-100>,"recommended_next_focus":"<one thing>"}`.trim();
@@ -78,10 +85,20 @@ module.exports = async function handler(req, res) {
       baseURL: "https://api.groq.com/openai/v1",
     });
 
+    const questionLimit = candidateContext.quickMode === true ? 3 : 6;
+    const aiQuestionCount = messages.filter((m) => m.role === "assistant").length;
+    const lastMessageIsUser = messages.length > 0 && messages[messages.length - 1].role === "user";
+
+    // Build system prompt — append a hard override when question limit is reached
+    let systemContent = buildSystemPrompt(candidateContext);
+    if (aiQuestionCount >= questionLimit && lastMessageIsUser) {
+      systemContent += `\n\nOVERRIDE: You have already asked ${aiQuestionCount} questions which meets the ${questionLimit}-question limit. The interview is OVER. Do NOT ask another question. Output the JSON report immediately. Your entire response must be only the JSON object starting with {.`;
+    }
+
     const completion = await client.chat.completions.create({
       model: "llama-3.3-70b-versatile",
       messages: [
-        { role: "system", content: buildSystemPrompt(candidateContext) },
+        { role: "system", content: systemContent },
         ...messages,
       ],
       temperature: 0.7,
