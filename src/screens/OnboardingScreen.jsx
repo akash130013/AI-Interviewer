@@ -1,25 +1,40 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View, Text, TextInput, TouchableOpacity,
   ScrollView, StyleSheet, KeyboardAvoidingView, Platform, Alert,
 } from "react-native";
 import { supabase } from "../lib/supabase";
+import { getStreakData } from "../lib/streak";
 
 export default function OnboardingScreen({ navigation }) {
+  const [streak, setStreak] = useState(0);
   const [form, setForm] = useState({
     role: "",
     company: "",
     yearsOfExperience: "3-5",
     interviewType: "mixed",
     jobDescription: "",
+    companyMode: "General",
   });
 
-  function handleStart() {
+  const COMPANY_MODES = [
+    { label: "General", icon: "🌐" },
+    { label: "Amazon", icon: "📦" },
+    { label: "Google", icon: "🔍" },
+    { label: "Microsoft", icon: "🪟" },
+    { label: "TCS / Infosys", icon: "🇮🇳" },
+  ];
+
+  useEffect(() => {
+    getStreakData().then(({ count }) => setStreak(count));
+  }, []);
+
+  function handleStart(quickMode = false) {
     if (!form.role.trim()) {
       Alert.alert("Required", "Please enter the role you are applying for.");
       return;
     }
-    navigation.navigate("Interview", { candidateContext: form });
+    navigation.navigate("Interview", { candidateContext: { ...form, quickMode } });
   }
 
   async function handleSignOut() {
@@ -46,6 +61,34 @@ export default function OnboardingScreen({ navigation }) {
         <Text style={styles.subtitle}>
           The more context you give, the more relevant the questions will be.
         </Text>
+
+        {streak > 0 && (
+          <View style={styles.streakBar}>
+            <Text style={styles.streakText}>🔥 {streak}-day streak — keep it going!</Text>
+          </View>
+        )}
+
+        <Text style={styles.label}>Interview mode</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.modeScroll}>
+          {COMPANY_MODES.map(({ label, icon }) => (
+            <TouchableOpacity
+              key={label}
+              style={[styles.modeChip, form.companyMode === label && styles.modeChipSelected]}
+              onPress={() => setForm({ ...form, companyMode: label, company: label === "General" ? form.company : label })}
+            >
+              <Text style={styles.modeIcon}>{icon}</Text>
+              <Text style={[styles.modeLabel, form.companyMode === label && styles.modeLabelSelected]}>{label}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+        {form.companyMode !== "General" && (
+          <Text style={styles.modeTip}>
+            {form.companyMode === "Amazon" && "Focus: 14 Leadership Principles, STAR answers"}
+            {form.companyMode === "Google" && "Focus: Googleyness, structured problem solving"}
+            {form.companyMode === "Microsoft" && "Focus: Growth mindset, collaboration, impact"}
+            {form.companyMode === "TCS / Infosys" && "Focus: HR + Technical rounds, project experience"}
+          </Text>
+        )}
 
         <Text style={styles.label}>Role you are applying for *</Text>
         <TextInput
@@ -107,8 +150,12 @@ export default function OnboardingScreen({ navigation }) {
           textAlignVertical="top"
         />
 
-        <TouchableOpacity style={styles.button} onPress={handleStart}>
-          <Text style={styles.buttonText}>Start interview →</Text>
+        <TouchableOpacity style={styles.button} onPress={() => handleStart(false)}>
+          <Text style={styles.buttonText}>Start full interview (6 questions) →</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.quickButton} onPress={() => handleStart(true)}>
+          <Text style={styles.quickButtonText}>⚡ Quick practice (3 questions, ~5 min)</Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -122,7 +169,23 @@ const styles = StyleSheet.create({
   topActions: { flexDirection: "row", gap: 14, paddingTop: 4 },
   topLink: { fontSize: 13, color: "#888" },
   title: { fontSize: 26, fontWeight: "600", color: "#111", flex: 1 },
-  subtitle: { fontSize: 14, color: "#666", marginBottom: 28, lineHeight: 20 },
+  subtitle: { fontSize: 14, color: "#666", marginBottom: 12, lineHeight: 20 },
+  streakBar: {
+    backgroundColor: "#fff7ed", borderRadius: 12, paddingVertical: 10, paddingHorizontal: 16,
+    marginBottom: 20, borderWidth: 1, borderColor: "#fed7aa",
+  },
+  streakText: { fontSize: 14, color: "#ea580c", fontWeight: "600" },
+  modeScroll: { marginBottom: 4 },
+  modeChip: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    paddingHorizontal: 14, paddingVertical: 10, borderRadius: 20,
+    borderWidth: 1, borderColor: "#ddd", backgroundColor: "#fafafa", marginRight: 8,
+  },
+  modeChipSelected: { backgroundColor: "#111", borderColor: "#111" },
+  modeIcon: { fontSize: 15 },
+  modeLabel: { fontSize: 13, color: "#555" },
+  modeLabelSelected: { color: "#fff", fontWeight: "600" },
+  modeTip: { fontSize: 12, color: "#888", marginBottom: 4, marginTop: 6, lineHeight: 16 },
   label: { fontSize: 13, fontWeight: "500", color: "#444", marginBottom: 8, marginTop: 20 },
   input: {
     borderWidth: 1, borderColor: "#e0e0e0", borderRadius: 12,
@@ -139,7 +202,12 @@ const styles = StyleSheet.create({
   optionTextSelected: { color: "#fff" },
   button: {
     backgroundColor: "#111", borderRadius: 14, paddingVertical: 16,
-    alignItems: "center", marginTop: 36, marginBottom: 40,
+    alignItems: "center", marginTop: 36, marginBottom: 10,
   },
   buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
+  quickButton: {
+    borderWidth: 1.5, borderColor: "#111", borderRadius: 14, paddingVertical: 14,
+    alignItems: "center", marginBottom: 40,
+  },
+  quickButtonText: { color: "#111", fontSize: 15, fontWeight: "500" },
 });

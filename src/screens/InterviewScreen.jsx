@@ -7,6 +7,7 @@ import * as Speech from "expo-speech";
 import { useVoice } from "../hooks/useVoice";
 import { sendMessage, extractReport } from "../lib/openai";
 import { supabase, saveInterview } from "../lib/supabase";
+import { recordInterviewToday } from "../lib/streak";
 
 export default function InterviewScreen({ route, navigation }) {
   const { candidateContext } = route.params;
@@ -50,7 +51,11 @@ export default function InterviewScreen({ route, navigation }) {
   }
 
   async function handleReportReceived(report) {
-    // Save to Supabase if user is logged in
+    let streakCount = 0;
+    try {
+      streakCount = await recordInterviewToday();
+    } catch (_) {}
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
@@ -58,7 +63,7 @@ export default function InterviewScreen({ route, navigation }) {
       }
     } catch (_) {}
 
-    navigation.navigate("Report", { report });
+    navigation.navigate("Report", { report, streakCount });
   }
 
   async function handleMicPress() {

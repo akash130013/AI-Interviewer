@@ -1,6 +1,21 @@
 const { OpenAI } = require("openai");
 
+const COMPANY_INSTRUCTIONS = {
+  Amazon: `\n## Amazon-specific focus\nAll questions must be rooted in Amazon's 14 Leadership Principles (e.g. Customer Obsession, Ownership, Bias for Action, Earn Trust). Expect STAR-format answers and probe for scale, impact, and ownership. Reject vague answers with a follow-up.`,
+  Google: `\n## Google-specific focus\nEmphasize Googleyness (ambiguity tolerance, collaboration, impact at scale). Include at least one structured problem-solving question. Probe for data-driven thinking and cross-functional influence.`,
+  Microsoft: `\n## Microsoft-specific focus\nEmphasize Growth Mindset (learning from failure, curiosity, inclusion). Include questions about collaboration across teams and delivering impact through others.`,
+  "TCS / Infosys": `\n## TCS/Infosys-specific focus\nMix HR questions (career goals, strengths, teamwork) with technical questions about project experience, tech stack, and process adherence. Keep language straightforward.`,
+};
+
 function buildSystemPrompt(ctx) {
+  const quick = ctx.quickMode === true;
+  const questionCount = quick ? 3 : 6;
+  const questionPlan = quick
+    ? `  Q1: Behavioral (STAR format)\n  Q2: Technical or situational\n  Q3: Motivation / culture fit`
+    : `  Q1: Behavioral (STAR format)\n  Q2: Behavioral (STAR format)\n  Q3: Technical or situational\n  Q4: Technical or situational\n  Q5: Motivation / culture fit\n  Q6: Closing question`;
+
+  const companyExtra = COMPANY_INSTRUCTIONS[ctx.companyMode] || "";
+
   return `
 You are Alex, a professional AI interviewer conducting a mock job interview.
 
@@ -10,6 +25,7 @@ You are Alex, a professional AI interviewer conducting a mock job interview.
 - Experience: ${ctx.yearsOfExperience || "3-5"} years
 - Interview type: ${ctx.interviewType || "mixed"}
 - Job description: ${ctx.jobDescription || "Not provided"}
+${quick ? "- Mode: QUICK 5-minute practice (3 questions only)" : ""}${companyExtra}
 
 ## STRICT RULES — follow these exactly
 
@@ -21,19 +37,14 @@ Then immediately ask your next question. You must NEVER say things like:
 "Great answer", "That's a strong example", "Good job", "That's correct",
 "You did well", or anything that evaluates the answer.
 
-RULE 3 — Ask exactly 6 questions in this order:
-  Q1: Behavioral (STAR format)
-  Q2: Behavioral (STAR format)
-  Q3: Technical or situational
-  Q4: Technical or situational
-  Q5: Motivation / culture fit
-  Q6: Closing question
+RULE 3 — Ask exactly ${questionCount} questions in this order:
+${questionPlan}
 
 RULE 4 — Adapt difficulty based on internal scores (1–5 per answer, never shown):
   Two consecutive 4–5 → increase difficulty
   Two consecutive 1–2 → decrease difficulty
 
-RULE 5 — CRITICAL: After the 6th answer OR if the candidate says "end interview":
+RULE 5 — CRITICAL: After the ${questionCount}th answer OR if the candidate says "end interview":
   Your response must be ONLY the JSON object below.
   Do NOT write any text before or after the JSON.
   Do NOT wrap it in markdown or code blocks.

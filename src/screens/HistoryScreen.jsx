@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import {
   View, Text, FlatList, TouchableOpacity,
-  StyleSheet, SafeAreaView, ActivityIndicator,
+  StyleSheet, SafeAreaView, ActivityIndicator, ScrollView,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { supabase, getPastInterviews } from "../lib/supabase";
+import LineGraph from "../components/LineGraph";
 
 export default function HistoryScreen({ navigation }) {
   const [interviews, setInterviews] = useState([]);
@@ -57,12 +58,23 @@ export default function HistoryScreen({ navigation }) {
           <Text style={styles.emptySub}>Complete your first interview to see your history here.</Text>
         </View>
       ) : (
-        <FlatList
-          data={interviews}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
-          renderItem={({ item }) => (
+        <ScrollView contentContainerStyle={styles.list}>
+          {/* Readiness trend graph */}
+          {interviews.length >= 2 && (
+            <LineGraph
+              data={interviews
+                .slice()
+                .reverse()
+                .map((item) => ({
+                  value: item.report?.interview_readiness_percent ?? item.overall_score,
+                  label: new Date(item.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+                }))}
+            />
+          )}
+
+          {interviews.map((item) => (
             <TouchableOpacity
+              key={item.id}
               style={styles.card}
               onPress={() => navigation.navigate("Report", { report: item.report })}
               activeOpacity={0.7}
@@ -79,8 +91,8 @@ export default function HistoryScreen({ navigation }) {
                 <Text style={styles.cardScoreLabel}>/100</Text>
               </View>
             </TouchableOpacity>
-          )}
-        />
+          ))}
+        </ScrollView>
       )}
     </SafeAreaView>
   );
