@@ -18,6 +18,9 @@ export default function SignupScreen({ navigation }) {
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [verified, setVerified] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendDone, setResendDone] = useState(false);
 
   async function handleSignup() {
     setError(null);
@@ -40,7 +43,7 @@ export default function SignupScreen({ navigation }) {
     }
 
     setLoading(true);
-    const { error: err } = await supabase.auth.signUp({
+    const { data, error: err } = await supabase.auth.signUp({
       email: email.trim().toLowerCase(),
       password,
     });
@@ -48,11 +51,66 @@ export default function SignupScreen({ navigation }) {
 
     if (err) {
       setError(err.message);
-    } else {
+    } else if (data?.session) {
+      // Email confirmation is disabled — go straight in
       navigation.replace("Onboarding");
+    } else {
+      // Email confirmation required — show check-inbox screen
+      setVerified(true);
     }
   }
 
+  async function handleResend() {
+    setResending(true);
+    await supabase.auth.resend({ type: "signup", email: email.trim().toLowerCase() });
+    setResending(false);
+    setResendDone(true);
+    setTimeout(() => setResendDone(false), 4000);
+  }
+
+  // ── Check-your-inbox screen ──────────────────────────────────────────────
+  if (verified) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.inboxWrap}>
+          <Text style={styles.inboxIcon}>📬</Text>
+          <Text style={styles.inboxTitle}>Check your inbox</Text>
+          <Text style={styles.inboxBody}>
+            We sent a verification link to{"\n"}
+            <Text style={styles.inboxEmail}>{email.trim().toLowerCase()}</Text>
+            {"\n\n"}Click the link in the email to activate your account, then come back here and log in.
+          </Text>
+
+          {resendDone ? (
+            <Text style={styles.resendOk}>✓ Email resent!</Text>
+          ) : (
+            <TouchableOpacity
+              style={styles.resendBtn}
+              onPress={handleResend}
+              disabled={resending}
+              activeOpacity={0.7}
+            >
+              {resending ? (
+                <ActivityIndicator color="#111" size="small" />
+              ) : (
+                <Text style={styles.resendText}>Resend email</Text>
+              )}
+            </TouchableOpacity>
+          )}
+
+          <TouchableOpacity
+            style={styles.goLoginBtn}
+            onPress={() => navigation.navigate("Login")}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.goLoginText}>Go to Log In</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // ── Signup form ───────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
@@ -217,4 +275,22 @@ const styles = StyleSheet.create({
   loginLink: { fontSize: 14, color: "#111", fontWeight: "700" },
 
   legal: { fontSize: 11, color: "#bbb", textAlign: "center", lineHeight: 16 },
+
+  // Check-inbox state
+  inboxWrap: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 36 },
+  inboxIcon: { fontSize: 64, marginBottom: 20 },
+  inboxTitle: { fontSize: 24, fontWeight: "700", color: "#111", marginBottom: 16, textAlign: "center" },
+  inboxBody: { fontSize: 15, color: "#555", textAlign: "center", lineHeight: 24, marginBottom: 32 },
+  inboxEmail: { fontWeight: "700", color: "#111" },
+  resendBtn: {
+    borderWidth: 1, borderColor: "#ddd", borderRadius: 12,
+    paddingVertical: 12, paddingHorizontal: 28, marginBottom: 16,
+  },
+  resendText: { fontSize: 14, color: "#555", fontWeight: "500" },
+  resendOk: { fontSize: 14, color: "#16a34a", fontWeight: "600", marginBottom: 16 },
+  goLoginBtn: {
+    backgroundColor: "#111", borderRadius: 14,
+    paddingVertical: 16, paddingHorizontal: 48, alignSelf: "stretch", alignItems: "center",
+  },
+  goLoginText: { fontSize: 16, fontWeight: "700", color: "#fff" },
 });

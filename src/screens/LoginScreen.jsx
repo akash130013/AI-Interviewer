@@ -26,7 +26,11 @@ export default function LoginScreen({ navigation }) {
     });
     setLoading(false);
     if (err) {
-      setError(err.message);
+      if (err.message.toLowerCase().includes("email not confirmed")) {
+        setError("Please verify your email first. Check your inbox for the verification link.");
+      } else {
+        setError(err.message);
+      }
     } else {
       navigation.replace("Onboarding");
     }
