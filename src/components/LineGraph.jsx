@@ -1,3 +1,4 @@
+import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import Svg, { Polyline, Circle, Line, Text as SvgText } from "react-native-svg";
 
@@ -60,11 +61,10 @@ export default function LineGraph({ data }) {
 
         {/* Dots + date labels */}
         {data.map((d, i) => (
-          <>
-            <Circle key={`c${i}`} cx={toX(i)} cy={toY(d.value)} r={4} fill="#111" />
+          <React.Fragment key={i}>
+            <Circle cx={toX(i)} cy={toY(d.value)} r={4} fill="#111" />
             {(i === 0 || i === data.length - 1) && (
               <SvgText
-                key={`l${i}`}
                 x={toX(i)}
                 y={H - 4}
                 textAnchor={i === 0 ? "start" : "end"}
@@ -74,7 +74,7 @@ export default function LineGraph({ data }) {
                 {d.label}
               </SvgText>
             )}
-          </>
+          </React.Fragment>
         ))}
       </Svg>
     </View>
