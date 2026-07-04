@@ -1,13 +1,17 @@
 import { useState, useEffect } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  ScrollView, Alert, Linking,
+  ScrollView, Alert, Linking, Share,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../lib/supabase";
 
 const APP_VERSION = "1.0.0";
 const CONTACT_EMAIL = "richamediahub@gmail.com";
+const SHARE_MESSAGE =
+  "🎙 I've been using *AI Interviewer* to practice job interviews with AI!\n\n" +
+  "It asks real interview questions, scores your answers, and gives detailed feedback — like having a personal interview coach.\n\n" +
+  "Coming soon to Google Play Store. Stay tuned! 🚀";
 
 function Section({ title, children }) {
   return (
@@ -54,6 +58,17 @@ export default function SettingsScreen({ navigation }) {
   }, []);
 
   const initial = email ? email[0].toUpperCase() : "?";
+
+  async function handleShareWhatsApp() {
+    const whatsappUrl = `whatsapp://send?text=${encodeURIComponent(SHARE_MESSAGE)}`;
+    const canOpen = await Linking.canOpenURL(whatsappUrl);
+    if (canOpen) {
+      Linking.openURL(whatsappUrl);
+    } else {
+      // WhatsApp not installed — fall back to native share sheet
+      Share.share({ message: SHARE_MESSAGE });
+    }
+  }
 
   function handleContactUs() {
     const subject = encodeURIComponent("AI Interviewer — Support");
@@ -123,6 +138,13 @@ export default function SettingsScreen({ navigation }) {
 
         {/* Support */}
         <Section title="SUPPORT">
+          <Row
+            icon="💬"
+            label="Share on WhatsApp"
+            subtitle="Invite friends to try the app"
+            onPress={handleShareWhatsApp}
+          />
+          <Divider />
           <Row
             icon="✉️"
             label="Contact Us"
