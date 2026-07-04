@@ -6,7 +6,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../lib/supabase";
 
-export default function LoginScreen({ navigation }) {
+export default function LoginScreen({ navigation, onBypass }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -31,9 +31,8 @@ export default function LoginScreen({ navigation }) {
       } else {
         setError(err.message);
       }
-    } else {
-      navigation.replace("Onboarding");
     }
+    // On success: session change in App.jsx swaps navigator automatically
   }
 
   return (
@@ -113,7 +112,7 @@ export default function LoginScreen({ navigation }) {
             {/* Google bypass */}
             <TouchableOpacity
               style={styles.googleBtn}
-              onPress={() => navigation.replace("Onboarding")}
+              onPress={onBypass}
               activeOpacity={0.85}
             >
               <Text style={styles.googleIcon}>G</Text>

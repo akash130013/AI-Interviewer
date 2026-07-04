@@ -16,11 +16,13 @@ import StudyTopicScreen from "./src/screens/StudyTopicScreen";
 
 const Stack = createStackNavigator();
 
-function AuthNavigator() {
+function AuthNavigator({ onBypass }) {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="Login">
+          {(props) => <LoginScreen {...props} onBypass={onBypass} />}
+        </Stack.Screen>
         <Stack.Screen name="Signup" component={SignupScreen} />
       </Stack.Navigator>
     </NavigationContainer>
@@ -46,6 +48,7 @@ function AppNavigator() {
 export default function App() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [bypassed, setBypassed] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -64,7 +67,7 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      {session ? <AppNavigator /> : <AuthNavigator />}
+      {(session || bypassed) ? <AppNavigator /> : <AuthNavigator onBypass={() => setBypassed(true)} />}
     </SafeAreaProvider>
   );
 }

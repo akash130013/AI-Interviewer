@@ -52,8 +52,7 @@ export default function SignupScreen({ navigation }) {
     if (err) {
       setError(err.message);
     } else if (data?.session) {
-      // Email confirmation is disabled — go straight in
-      navigation.replace("Onboarding");
+      // Email confirmation disabled — session change in App.jsx handles navigation
     } else {
       // Email confirmation required — show check-inbox screen
       setVerified(true);
