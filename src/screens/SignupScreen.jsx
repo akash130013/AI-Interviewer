@@ -6,25 +6,46 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../lib/supabase";
 
-export default function LoginScreen({ navigation }) {
+function validateEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+export default function SignupScreen({ navigation }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  async function handleLogin() {
+  async function handleSignup() {
     setError(null);
-    if (!email.trim() || !password) {
-      setError("Please enter your email and password.");
+
+    if (!email.trim() || !password || !confirmPassword) {
+      setError("Please fill in all fields.");
       return;
     }
+    if (!validateEmail(email.trim())) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
     setLoading(true);
-    const { error: err } = await supabase.auth.signInWithPassword({
+    const { error: err } = await supabase.auth.signUp({
       email: email.trim().toLowerCase(),
       password,
     });
     setLoading(false);
+
     if (err) {
       setError(err.message);
     } else {
@@ -43,11 +64,17 @@ export default function LoginScreen({ navigation }) {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Logo */}
-          <View style={styles.logoArea}>
-            <Text style={styles.logoIcon}>🎙</Text>
-            <Text style={styles.appName}>AI Interviewer</Text>
-            <Text style={styles.tagline}>Practice. Improve. Get hired.</Text>
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => navigation.goBack()} activeOpacity={0.7}>
+              <Text style={styles.back}>← Back</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Title */}
+          <View style={styles.titleArea}>
+            <Text style={styles.title}>Create account</Text>
+            <Text style={styles.subtitle}>Start practising interviews for free</Text>
           </View>
 
           {/* Form */}
@@ -70,7 +97,7 @@ export default function LoginScreen({ navigation }) {
             <View style={styles.passwordWrap}>
               <TextInput
                 style={[styles.input, styles.passwordInput]}
-                placeholder="Enter your password"
+                placeholder="Min. 8 characters"
                 placeholderTextColor="#bbb"
                 value={password}
                 onChangeText={setPassword}
@@ -86,47 +113,57 @@ export default function LoginScreen({ navigation }) {
               </TouchableOpacity>
             </View>
 
+            <Text style={styles.label}>Confirm Password</Text>
+            <View style={styles.passwordWrap}>
+              <TextInput
+                style={[styles.input, styles.passwordInput]}
+                placeholder="Re-enter your password"
+                placeholderTextColor="#bbb"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry={!showConfirm}
+                autoCapitalize="none"
+              />
+              <TouchableOpacity
+                style={styles.eyeBtn}
+                onPress={() => setShowConfirm((v) => !v)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.eyeIcon}>{showConfirm ? "🙈" : "👁️"}</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Password match indicator */}
+            {confirmPassword.length > 0 && (
+              <Text style={password === confirmPassword ? styles.matchOk : styles.matchFail}>
+                {password === confirmPassword ? "✓ Passwords match" : "✗ Passwords do not match"}
+              </Text>
+            )}
+
             <TouchableOpacity
               style={[styles.primaryBtn, loading && styles.btnDisabled]}
-              onPress={handleLogin}
+              onPress={handleSignup}
               disabled={loading}
               activeOpacity={0.85}
             >
               {loading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.primaryBtnText}>Log In</Text>
+                <Text style={styles.primaryBtnText}>Create Account</Text>
               )}
-            </TouchableOpacity>
-
-            {/* Divider */}
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerLabel}>or</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
-            {/* Google bypass */}
-            <TouchableOpacity
-              style={styles.googleBtn}
-              onPress={() => navigation.replace("Onboarding")}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.googleIcon}>G</Text>
-              <Text style={styles.googleBtnText}>Continue with Google</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Sign up link */}
-          <View style={styles.signupRow}>
-            <Text style={styles.signupText}>Don't have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate("Signup")}>
-              <Text style={styles.signupLink}>Sign up</Text>
+          {/* Login link */}
+          <View style={styles.loginRow}>
+            <Text style={styles.loginText}>Already have an account? </Text>
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+              <Text style={styles.loginLink}>Log in</Text>
             </TouchableOpacity>
           </View>
 
           <Text style={styles.legal}>
-            By continuing you agree to our Terms of Service and Privacy Policy.
+            By signing up you agree to our Terms of Service and Privacy Policy.
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -136,12 +173,14 @@ export default function LoginScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
-  scroll: { flexGrow: 1, paddingHorizontal: 28, paddingTop: 20, paddingBottom: 40 },
+  scroll: { flexGrow: 1, paddingHorizontal: 28, paddingBottom: 40 },
 
-  logoArea: { alignItems: "center", marginBottom: 36, marginTop: 20 },
-  logoIcon: { fontSize: 52, marginBottom: 12 },
-  appName: { fontSize: 26, fontWeight: "700", color: "#111", marginBottom: 6 },
-  tagline: { fontSize: 14, color: "#888", textAlign: "center" },
+  header: { paddingTop: 12, marginBottom: 24 },
+  back: { fontSize: 15, color: "#111", fontWeight: "500" },
+
+  titleArea: { marginBottom: 32 },
+  title: { fontSize: 26, fontWeight: "700", color: "#111", marginBottom: 6 },
+  subtitle: { fontSize: 14, color: "#888" },
 
   form: { marginBottom: 24 },
   label: { fontSize: 13, fontWeight: "600", color: "#333", marginBottom: 6, marginTop: 14 },
@@ -149,10 +188,9 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: "#e0e0e0", borderRadius: 12,
     paddingHorizontal: 16, paddingVertical: 14,
     fontSize: 15, color: "#111", backgroundColor: "#fafafa",
-    marginBottom: 4,
   },
-  passwordWrap: { position: "relative", marginBottom: 4 },
-  passwordInput: { paddingRight: 50, marginBottom: 0 },
+  passwordWrap: { position: "relative" },
+  passwordInput: { paddingRight: 50 },
   eyeBtn: {
     position: "absolute", right: 14, top: 0, bottom: 0,
     justifyContent: "center", alignItems: "center",
@@ -164,32 +202,19 @@ const styles = StyleSheet.create({
     padding: 12, marginBottom: 8,
     fontSize: 13, color: "#dc2626", lineHeight: 18,
   },
+  matchOk: { fontSize: 12, color: "#16a34a", marginTop: 6, fontWeight: "500" },
+  matchFail: { fontSize: 12, color: "#dc2626", marginTop: 6, fontWeight: "500" },
 
   primaryBtn: {
     backgroundColor: "#111", borderRadius: 14,
-    paddingVertical: 16, alignItems: "center", marginTop: 20,
+    paddingVertical: 16, alignItems: "center", marginTop: 24,
   },
   btnDisabled: { opacity: 0.5 },
   primaryBtnText: { fontSize: 16, fontWeight: "700", color: "#fff" },
 
-  divider: { flexDirection: "row", alignItems: "center", marginVertical: 20 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: "#ebebeb" },
-  dividerLabel: { fontSize: 12, color: "#bbb", marginHorizontal: 12 },
-
-  googleBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center",
-    borderWidth: 1, borderColor: "#e0e0e0", borderRadius: 14,
-    paddingVertical: 14, gap: 10, backgroundColor: "#fafafa",
-  },
-  googleIcon: {
-    fontSize: 16, fontWeight: "700", color: "#4285F4",
-    fontFamily: Platform.OS === "ios" ? "Georgia" : "serif",
-  },
-  googleBtnText: { fontSize: 15, fontWeight: "600", color: "#111" },
-
-  signupRow: { flexDirection: "row", justifyContent: "center", marginBottom: 20 },
-  signupText: { fontSize: 14, color: "#888" },
-  signupLink: { fontSize: 14, color: "#111", fontWeight: "700" },
+  loginRow: { flexDirection: "row", justifyContent: "center", marginBottom: 20 },
+  loginText: { fontSize: 14, color: "#888" },
+  loginLink: { fontSize: 14, color: "#111", fontWeight: "700" },
 
   legal: { fontSize: 11, color: "#bbb", textAlign: "center", lineHeight: 16 },
 });
