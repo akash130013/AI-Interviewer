@@ -3,7 +3,6 @@ import {
   View, Text, TextInput, TouchableOpacity,
   ScrollView, StyleSheet, KeyboardAvoidingView, Platform, Alert,
 } from "react-native";
-import { supabase } from "../lib/supabase";
 import { getStreakData } from "../lib/streak";
 
 export default function OnboardingScreen({ navigation }) {
@@ -37,10 +36,6 @@ export default function OnboardingScreen({ navigation }) {
     navigation.navigate("Interview", { candidateContext: { ...form, quickMode } });
   }
 
-  async function handleSignOut() {
-    await supabase.auth.signOut();
-  }
-
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -49,14 +44,13 @@ export default function OnboardingScreen({ navigation }) {
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.topRow}>
           <Text style={styles.title}>Set up your interview</Text>
-          <View style={styles.topActions}>
-            <TouchableOpacity onPress={() => navigation.navigate("History")}>
-              <Text style={styles.topLink}>History</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleSignOut}>
-              <Text style={styles.topLink}>Sign out</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            onPress={() => navigation.navigate("Settings")}
+            activeOpacity={0.7}
+            style={styles.settingsBtn}
+          >
+            <Text style={styles.settingsIcon}>⚙️</Text>
+          </TouchableOpacity>
         </View>
         <Text style={styles.subtitle}>
           The more context you give, the more relevant the questions will be.
@@ -175,8 +169,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
   scroll: { padding: 24, paddingTop: 60 },
   topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 },
-  topActions: { flexDirection: "row", gap: 14, paddingTop: 4 },
-  topLink: { fontSize: 13, color: "#888" },
+  settingsBtn: { padding: 4 },
+  settingsIcon: { fontSize: 22 },
   title: { fontSize: 26, fontWeight: "600", color: "#111", flex: 1 },
   subtitle: { fontSize: 14, color: "#666", marginBottom: 12, lineHeight: 20 },
   streakBar: {
