@@ -65,6 +65,12 @@ export default function ReportScreen({ route, navigation }) {
         </Animated.View>
       )}
 
+      {navigation.canGoBack() && (
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <Text style={styles.backBtnText}>← Back</Text>
+        </TouchableOpacity>
+      )}
+
       <ScrollView contentContainerStyle={styles.scroll}>
         {/* Score */}
         <View style={styles.scoreBlock}>
@@ -147,7 +153,9 @@ export default function ReportScreen({ route, navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
-  scroll: { padding: 24, paddingTop: 48 },
+  backBtn: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 4 },
+  backBtnText: { fontSize: 15, color: "#111" },
+  scroll: { padding: 24, paddingTop: 16 },
   celebrationBanner: {
     position: "absolute", top: 60, left: 20, right: 20, zIndex: 10,
     backgroundColor: "#16a34a", borderRadius: 14, padding: 14, alignItems: "center",

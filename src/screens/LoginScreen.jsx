@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView,
+  ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, // Platform kept for KeyboardAvoidingView
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../lib/supabase";
@@ -102,22 +102,7 @@ export default function LoginScreen({ navigation, onBypass }) {
               )}
             </TouchableOpacity>
 
-            {/* Divider */}
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerLabel}>or</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
-            {/* Google bypass */}
-            <TouchableOpacity
-              style={styles.googleBtn}
-              onPress={onBypass}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.googleIcon}>G</Text>
-              <Text style={styles.googleBtnText}>Continue with Google</Text>
-            </TouchableOpacity>
+            {/* Google login — re-enable once OAuth is configured in Supabase */}
           </View>
 
           {/* Sign up link */}
@@ -174,21 +159,6 @@ const styles = StyleSheet.create({
   },
   btnDisabled: { opacity: 0.5 },
   primaryBtnText: { fontSize: 16, fontWeight: "700", color: "#fff" },
-
-  divider: { flexDirection: "row", alignItems: "center", marginVertical: 20 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: "#ebebeb" },
-  dividerLabel: { fontSize: 12, color: "#bbb", marginHorizontal: 12 },
-
-  googleBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center",
-    borderWidth: 1, borderColor: "#e0e0e0", borderRadius: 14,
-    paddingVertical: 14, gap: 10, backgroundColor: "#fafafa",
-  },
-  googleIcon: {
-    fontSize: 16, fontWeight: "700", color: "#4285F4",
-    fontFamily: Platform.OS === "ios" ? "Georgia" : "serif",
-  },
-  googleBtnText: { fontSize: 15, fontWeight: "600", color: "#111" },
 
   signupRow: { flexDirection: "row", justifyContent: "center", marginBottom: 20 },
   signupText: { fontSize: 14, color: "#888" },
