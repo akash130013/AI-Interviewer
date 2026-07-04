@@ -14,6 +14,7 @@ export default function InterviewScreen({ route, navigation }) {
   const { candidateContext } = route.params;
   const [messages, setMessages] = useState([]);
   const [status, setStatus] = useState("thinking");
+  const [micError, setMicError] = useState(null);
   const flatListRef = useRef(null);
   const { isRecording, isTranscribing, startRecording, stopRecording } = useVoice();
 
@@ -70,12 +71,19 @@ export default function InterviewScreen({ route, navigation }) {
   async function handleMicPress() {
     if (isRecording) {
       const transcript = await stopRecording();
-      if (!transcript) return;
+      if (!transcript) {
+        setMicError("Couldn't hear that — please tap the mic and try again.");
+        setTimeout(() => setMicError(null), 3500);
+        setStatus("idle");
+        return;
+      }
+      setMicError(null);
       const updated = [...messages, { role: "user", content: transcript }];
       setMessages(updated);
       await callAI(updated);
     } else {
       Speech.stop();
+      setMicError(null);
       await startRecording();
       setStatus("listening");
     }
@@ -134,7 +142,11 @@ export default function InterviewScreen({ route, navigation }) {
       />
 
       <View style={styles.controls}>
-        <Text style={styles.statusText}>{getStatusLabel()}</Text>
+        {micError ? (
+          <Text style={styles.micErrorText}>{micError}</Text>
+        ) : (
+          <Text style={styles.statusText}>{getStatusLabel()}</Text>
+        )}
 
         <TouchableOpacity
           style={[styles.micButton, { backgroundColor: micColor }]}
@@ -177,6 +189,7 @@ const styles = StyleSheet.create({
     gap: 14, borderTopWidth: 1, borderTopColor: "#f0f0f0",
   },
   statusText: { fontSize: 13, color: "#888" },
+  micErrorText: { fontSize: 13, color: "#dc2626", textAlign: "center" },
   micButton: {
     width: 76, height: 76, borderRadius: 38,
     alignItems: "center", justifyContent: "center",
