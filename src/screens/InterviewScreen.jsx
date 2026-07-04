@@ -9,6 +9,7 @@ import { useVoice } from "../hooks/useVoice";
 import { sendMessage, extractReport } from "../lib/openai";
 import { supabase, saveInterview } from "../lib/supabase";
 import { recordInterviewToday } from "../lib/streak";
+import { notifyInterviewComplete, scheduleDailyNotifications } from "../lib/notifications";
 
 export default function InterviewScreen({ route, navigation }) {
   const { candidateContext } = route.params;
@@ -56,6 +57,11 @@ export default function InterviewScreen({ route, navigation }) {
     let streakCount = 0;
     try {
       streakCount = await recordInterviewToday();
+      // Reschedule notifications with updated streak + fire completion alert
+      await Promise.all([
+        scheduleDailyNotifications(streakCount),
+        notifyInterviewComplete(report.overall_score ?? 0),
+      ]);
     } catch (_) {}
 
     try {
