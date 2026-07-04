@@ -1,5 +1,10 @@
 import "react-native-gesture-handler";
 import { useState, useEffect } from "react";
+import { LogBox } from "react-native";
+
+// expo-notifications push support was removed from Expo Go in SDK 53.
+// Local notifications still work in EAS builds. Suppress the noisy warning.
+LogBox.ignoreLogs(["expo-notifications: Android Push notifications"]);
 import { NavigationContainer } from "@react-navigation/native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { createStackNavigator } from "@react-navigation/stack";
