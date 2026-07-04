@@ -39,6 +39,7 @@ export default function App() {
     <SafeAreaProvider>
       <NavigationContainer>
         <Stack.Navigator
+          key={session ? "authed" : "unauthed"}
           initialRouteName={session ? "Onboarding" : "Login"}
           screenOptions={{ headerShown: false }}
         >
