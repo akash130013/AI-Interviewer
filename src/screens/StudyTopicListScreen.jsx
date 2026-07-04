@@ -1,8 +1,9 @@
 import { useState } from "react";
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, SafeAreaView,
+  StyleSheet,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function StudyTopicListScreen({ route, navigation }) {
   const { categoryTitle, categoryColor, topics, progress } = route.params;

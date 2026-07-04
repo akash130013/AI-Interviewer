@@ -1,8 +1,9 @@
 import { useState, useCallback } from "react";
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, SafeAreaView, ActivityIndicator,
+  StyleSheet, ActivityIndicator,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { getStudyCategories } from "../lib/study";
 import { getAllProgress } from "../lib/studyProgress";
@@ -27,7 +28,8 @@ export default function StudyLibraryScreen({ navigation }) {
       setCategories(cats);
       setProgress(prog);
     } catch (e) {
-      setError("Could not load study content. Check your connection.");
+      console.error("Study load error:", JSON.stringify(e));
+      setError(e?.message || e?.code || "Could not load study content.");
     } finally {
       setLoading(false);
     }

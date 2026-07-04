@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, SafeAreaView, Animated,
+  StyleSheet, Animated,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import RadarChart from "../components/RadarChart";
 
 export default function ReportScreen({ route, navigation }) {

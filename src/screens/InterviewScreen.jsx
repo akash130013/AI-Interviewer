@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import {
   View, Text, FlatList, TouchableOpacity,
-  StyleSheet, ActivityIndicator, SafeAreaView,
+  StyleSheet, ActivityIndicator,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import * as Speech from "expo-speech";
 import { useVoice } from "../hooks/useVoice";
 import { sendMessage, extractReport } from "../lib/openai";
