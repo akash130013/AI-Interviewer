@@ -68,6 +68,15 @@ export default function OnboardingScreen({ navigation }) {
           </View>
         )}
 
+        <TouchableOpacity style={styles.studyBtn} onPress={() => navigation.navigate("StudyLibrary")}>
+          <Text style={styles.studyBtnIcon}>📚</Text>
+          <View>
+            <Text style={styles.studyBtnTitle}>Study Topics First</Text>
+            <Text style={styles.studyBtnSub}>Browse Q&As across 7 categories</Text>
+          </View>
+          <Text style={styles.studyBtnArrow}>→</Text>
+        </TouchableOpacity>
+
         <Text style={styles.label}>Interview mode</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.modeScroll}>
           {COMPANY_MODES.map(({ label, icon }) => (
@@ -186,6 +195,15 @@ const styles = StyleSheet.create({
   modeLabel: { fontSize: 13, color: "#555" },
   modeLabelSelected: { color: "#fff", fontWeight: "600" },
   modeTip: { fontSize: 12, color: "#888", marginBottom: 4, marginTop: 6, lineHeight: 16 },
+  studyBtn: {
+    flexDirection: "row", alignItems: "center", gap: 12,
+    backgroundColor: "#f5f3ff", borderRadius: 14, padding: 16,
+    marginBottom: 20, borderWidth: 1, borderColor: "#ddd6fe",
+  },
+  studyBtnIcon: { fontSize: 26 },
+  studyBtnTitle: { fontSize: 14, fontWeight: "600", color: "#5b21b6" },
+  studyBtnSub: { fontSize: 12, color: "#7c3aed", marginTop: 2 },
+  studyBtnArrow: { fontSize: 16, color: "#7c3aed", marginLeft: "auto" },
   label: { fontSize: 13, fontWeight: "500", color: "#444", marginBottom: 8, marginTop: 20 },
   input: {
     borderWidth: 1, borderColor: "#e0e0e0", borderRadius: 12,

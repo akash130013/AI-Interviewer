@@ -8,6 +8,9 @@ import OnboardingScreen from "./src/screens/OnboardingScreen";
 import InterviewScreen from "./src/screens/InterviewScreen";
 import ReportScreen from "./src/screens/ReportScreen";
 import HistoryScreen from "./src/screens/HistoryScreen";
+import StudyLibraryScreen from "./src/screens/StudyLibraryScreen";
+import StudyTopicListScreen from "./src/screens/StudyTopicListScreen";
+import StudyTopicScreen from "./src/screens/StudyTopicScreen";
 
 const Stack = createStackNavigator();
 
@@ -38,6 +41,9 @@ export default function App() {
         <Stack.Screen name="Report" component={ReportScreen} />
         <Stack.Screen name="History" component={HistoryScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="StudyLibrary" component={StudyLibraryScreen} />
+        <Stack.Screen name="StudyTopicList" component={StudyTopicListScreen} />
+        <Stack.Screen name="StudyTopic" component={StudyTopicScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
