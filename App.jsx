@@ -16,6 +16,33 @@ import StudyTopicScreen from "./src/screens/StudyTopicScreen";
 
 const Stack = createStackNavigator();
 
+function AuthNavigator() {
+  return (
+    <NavigationContainer>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="Signup" component={SignupScreen} />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
+
+function AppNavigator() {
+  return (
+    <NavigationContainer>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+        <Stack.Screen name="Interview" component={InterviewScreen} />
+        <Stack.Screen name="Report" component={ReportScreen} />
+        <Stack.Screen name="History" component={HistoryScreen} />
+        <Stack.Screen name="StudyLibrary" component={StudyLibraryScreen} />
+        <Stack.Screen name="StudyTopicList" component={StudyTopicListScreen} />
+        <Stack.Screen name="StudyTopic" component={StudyTopicScreen} />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
+
 export default function App() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -37,23 +64,7 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <NavigationContainer>
-        <Stack.Navigator
-          key={session ? "authed" : "unauthed"}
-          initialRouteName={session ? "Onboarding" : "Login"}
-          screenOptions={{ headerShown: false }}
-        >
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Signup" component={SignupScreen} />
-          <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-          <Stack.Screen name="Interview" component={InterviewScreen} />
-          <Stack.Screen name="Report" component={ReportScreen} />
-          <Stack.Screen name="History" component={HistoryScreen} />
-          <Stack.Screen name="StudyLibrary" component={StudyLibraryScreen} />
-          <Stack.Screen name="StudyTopicList" component={StudyTopicListScreen} />
-          <Stack.Screen name="StudyTopic" component={StudyTopicScreen} />
-        </Stack.Navigator>
-      </NavigationContainer>
+      {session ? <AppNavigator /> : <AuthNavigator />}
     </SafeAreaProvider>
   );
 }
