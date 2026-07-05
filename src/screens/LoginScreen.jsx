@@ -49,7 +49,7 @@ export default function LoginScreen({ navigation, onBypass }) {
           {/* Logo */}
           <View style={styles.logoArea}>
             <Text style={styles.logoIcon}>🎙</Text>
-            <Text style={styles.appName}>AI Interviewer</Text>
+            <Text style={styles.appName}>CrackIt</Text>
             <Text style={styles.tagline}>Practice. Improve. Get hired.</Text>
           </View>
 

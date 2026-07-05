@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "AI Interviewer",
+    "name": "CrackIt",
     "slug": "crackit",
     "version": "1.0.0",
     "sdkVersion": "54.0.0",
@@ -11,7 +11,7 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#1e293b"
     },
     "platforms": ["android"],
     "android": {

@@ -9,7 +9,7 @@ import { supabase } from "../lib/supabase";
 const APP_VERSION = "1.0.0";
 const CONTACT_EMAIL = "richamediahub@gmail.com";
 const SHARE_MESSAGE =
-  "🎙 I've been using *AI Interviewer* to practice job interviews with AI!\n\n" +
+  "🎙 I've been using *CrackIt* to practice job interviews with AI!\n\n" +
   "It asks real interview questions, scores your answers, and gives detailed feedback — like having a personal interview coach.\n\n" +
   "Coming soon to Google Play Store. Stay tuned! 🚀";
 
@@ -165,7 +165,7 @@ export default function SettingsScreen({ navigation }) {
         </Section>
 
         {/* Version */}
-        <Text style={styles.version}>AI Interviewer v{APP_VERSION}</Text>
+        <Text style={styles.version}>CrackIt v{APP_VERSION}</Text>
       </ScrollView>
     </SafeAreaView>
   );
