@@ -10,11 +10,96 @@ const COMPANY_INSTRUCTIONS = {
 function buildSystemPrompt(ctx) {
   const quick = ctx.quickMode === true;
   const questionCount = quick ? 3 : 6;
-  const questionPlan = quick
-    ? `  Q1: Behavioral (STAR format)\n  Q2: Technical or situational\n  Q3: Motivation / culture fit`
-    : `  Q1: Behavioral (STAR format)\n  Q2: Behavioral (STAR format)\n  Q3: Technical or situational\n  Q4: Technical or situational\n  Q5: Motivation / culture fit\n  Q6: Closing question`;
+  const interviewType = ctx.interviewType || "mixed";
+  const skills = Array.isArray(ctx.skills) && ctx.skills.length > 0
+    ? ctx.skills
+    : null;
+  const skillsList = skills ? skills.join(", ") : null;
+
+  // Build question plan based on interview type
+  let questionPlan;
+  if (quick) {
+    if (interviewType === "technical" && skillsList) {
+      questionPlan = `  Q1: Deep technical question on ${skillsList}\n  Q2: Deep technical question on ${skillsList}\n  Q3: Motivation / culture fit`;
+    } else if (interviewType === "behavioral") {
+      questionPlan = `  Q1: Behavioral (STAR format)\n  Q2: Behavioral (STAR format)\n  Q3: Motivation / culture fit`;
+    } else {
+      questionPlan = `  Q1: Behavioral (STAR format)\n  Q2: ${skillsList ? `Deep technical question on ${skillsList}` : "Situational / role-specific question"}\n  Q3: Motivation / culture fit`;
+    }
+  } else if (interviewType === "technical") {
+    if (skillsList) {
+      questionPlan = `  Q1: Deep technical question on ${skillsList}\n  Q2: Deep technical question on ${skillsList}\n  Q3: Deep technical question on ${skillsList} (harder — go deeper, ask about internals, edge cases, or trade-offs)\n  Q4: Deep technical question on ${skillsList} (hardest — architecture, debugging scenario, or design decision)\n  Q5: Behavioral — how they handled a technical challenge on the job\n  Q6: Closing question`;
+    } else {
+      questionPlan = `  Q1: Technical role knowledge question\n  Q2: Technical role knowledge question\n  Q3: Technical role knowledge question (harder)\n  Q4: Technical role knowledge question (hardest)\n  Q5: Behavioral — how they handled a technical challenge\n  Q6: Closing question`;
+    }
+  } else if (interviewType === "behavioral") {
+    questionPlan = `  Q1: Behavioral (STAR format) — leadership or ownership\n  Q2: Behavioral (STAR format) — conflict or teamwork\n  Q3: Behavioral (STAR format) — failure or learning\n  Q4: Behavioral (STAR format) — initiative or impact\n  Q5: Motivation / culture fit\n  Q6: Closing question`;
+  } else {
+    // mixed
+    if (skillsList) {
+      questionPlan = `  Q1: Behavioral (STAR format)\n  Q2: Deep technical question on ${skillsList}\n  Q3: Behavioral (STAR format)\n  Q4: Deep technical question on ${skillsList} (harder)\n  Q5: Motivation / culture fit\n  Q6: Closing question`;
+    } else {
+      questionPlan = `  Q1: Behavioral (STAR format)\n  Q2: Situational / role-specific question\n  Q3: Behavioral (STAR format)\n  Q4: Situational / role-specific question\n  Q5: Motivation / culture fit\n  Q6: Closing question`;
+    }
+  }
 
   const companyExtra = COMPANY_INSTRUCTIONS[ctx.companyMode] || "";
+
+  // Build technical depth instructions if skills are present
+  const technicalInstructions = (interviewType !== "behavioral" && skillsList) ? `
+## HOW TO ASK TECHNICAL QUESTIONS — READ CAREFULLY
+The candidate selected these skills: ${skillsList}
+Your technical questions MUST test real knowledge of these specific technologies.
+
+Ask questions like a senior engineer would in a real interview:
+- Concept questions: "What is the difference between X and Y?", "Explain how X works under the hood"
+- Code reasoning: "What does this code do?", "What is wrong with this pattern?"
+- Debugging: "Why might this cause a memory leak / race condition / performance issue?"
+- Trade-offs: "When would you use X over Y?", "What are the downsides of X?"
+- Internals: "How does X handle Y internally?", "What happens when you call X?"
+
+EXAMPLES (use these as a style guide, do NOT copy verbatim):
+${skillsList.includes("JavaScript") || skillsList.includes("JS") ? `
+JavaScript examples:
+- "What is the difference between var, let, and const? When would you use each?"
+- "Explain how the JavaScript event loop works."
+- "What is a closure and give a real-world use case."
+- "What is the difference between == and ===?"
+- "What does 'this' refer to in an arrow function vs a regular function?"
+- "How does Promise.all differ from Promise.allSettled?"` : ""}
+${skillsList.includes("React") ? `
+React examples:
+- "What is the difference between useEffect and useLayoutEffect?"
+- "When does React re-render a component? How can you prevent unnecessary re-renders?"
+- "Explain the difference between controlled and uncontrolled components."
+- "What problem does useCallback solve?"
+- "How does React's reconciliation algorithm work?"` : ""}
+${skillsList.includes("Node.js") || skillsList.includes("Node") ? `
+Node.js examples:
+- "How does Node.js handle concurrency if it is single-threaded?"
+- "What is the difference between process.nextTick and setImmediate?"
+- "When would you use a stream instead of reading a file into memory?"
+- "How do you prevent callback hell?"` : ""}
+${skillsList.includes("Python") ? `
+Python examples:
+- "What is the GIL and how does it affect multi-threading in Python?"
+- "Explain list comprehensions vs generator expressions."
+- "What is the difference between @staticmethod and @classmethod?"
+- "How does Python manage memory?"` : ""}
+${skillsList.includes("SQL") || skillsList.includes("PostgreSQL") || skillsList.includes("MySQL") ? `
+SQL examples:
+- "What is the difference between INNER JOIN, LEFT JOIN, and FULL OUTER JOIN?"
+- "When would you use a CTE instead of a subquery?"
+- "What is an index and when can it slow things down?"
+- "Explain ACID properties in a database."` : ""}
+${skillsList.includes("System Design") ? `
+System Design examples:
+- "How would you design a URL shortener?"
+- "What is the CAP theorem and what does it mean for distributed systems?"
+- "Explain horizontal vs vertical scaling."
+- "How would you implement rate limiting?"` : ""}
+
+Do NOT ask behavioral or situational questions when a technical question is scheduled. Ask a REAL technical question that tests whether the candidate actually knows the technology.` : "";
 
   return `
 You are Alex, a professional AI interviewer conducting a mock job interview.
@@ -23,9 +108,11 @@ You are Alex, a professional AI interviewer conducting a mock job interview.
 - Role: ${ctx.role || "Software Engineer"}
 - Company: ${ctx.company || "a top tech company"}
 - Experience: ${ctx.yearsOfExperience || "3-5"} years
-- Interview type: ${ctx.interviewType || "mixed"}
+- Interview type: ${interviewType}
+- Skills to test: ${skillsList || "Not specified — ask general role questions"}
 - Job description: ${ctx.jobDescription || "Not provided"}
 ${quick ? "- Mode: QUICK 5-minute practice (3 questions only)" : ""}${companyExtra}
+${technicalInstructions}
 
 ## STRICT RULES — follow these exactly
 
