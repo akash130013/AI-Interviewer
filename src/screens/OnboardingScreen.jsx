@@ -142,7 +142,8 @@ function getSkillsForRole(role) {
 
 // ─── Persistence ─────────────────────────────────────────────────────────────
 
-const FORM_KEY = "@crackit_form_v1";
+// v2 key — old stored format (pre-skills) gets ignored cleanly
+const FORM_KEY = "@crackit_form_v2";
 
 async function saveFormToStore(form) {
   try {
@@ -154,7 +155,18 @@ async function saveFormToStore(form) {
 async function loadFormFromStore() {
   try {
     const raw = await SecureStore.getItemAsync(FORM_KEY);
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) return null;
+    const p = JSON.parse(raw);
+    // Explicit mapping ensures every field has a valid default (no undefined fields)
+    return {
+      role: p.role || "",
+      company: p.company || "",
+      yearsOfExperience: p.yearsOfExperience || "3-5",
+      interviewType: p.interviewType || "mixed",
+      companyMode: p.companyMode || "General",
+      skills: Array.isArray(p.skills) ? p.skills : [],
+      jobDescription: "",
+    };
   } catch (_) {
     return null;
   }
@@ -185,77 +197,66 @@ export default function OnboardingScreen({ navigation }) {
     { label: "TCS / Infosys", icon: "🇮🇳" },
   ];
 
+  // Reload saved form whenever this screen comes into focus
   useFocusEffect(
     useCallback(() => {
       loadFormFromStore().then((saved) => {
         if (saved) {
-          setForm((prev) => ({ ...prev, ...saved }));
-          setAvailableSkills(getSkillsForRole(saved.role || ""));
+          setForm(saved);
+          setAvailableSkills(getSkillsForRole(saved.role));
         }
       });
       getStreakData().then(({ count }) => setStreak(count));
     }, [])
   );
 
+  // Only update available skill chips when role text changes — never auto-mutate form.skills
   useEffect(() => {
-    const skills = getSkillsForRole(form.role);
-    setAvailableSkills(skills);
-    // Remove selected preset skills that no longer match the new role
-    // Keep custom skills (those that never were in any preset list)
-    setForm((prev) => {
-      const presetSkillsForNewRole = skills;
-      const filteredSkills = prev.skills.filter(
-        (s) => presetSkillsForNewRole.includes(s) || !ROLE_SKILL_MAP.flatMap((e) => e.skills).includes(s)
-      );
-      return { ...prev, skills: filteredSkills };
-    });
+    setAvailableSkills(getSkillsForRole(form.role));
   }, [form.role]);
 
+  // All form-change helpers: compute next state directly (no functional updater)
+  // so saveFormToStore is never called inside a React state updater.
   function updateForm(patch) {
-    setForm((prev) => {
-      const next = { ...prev, ...patch };
-      saveFormToStore(next);
-      return next;
-    });
+    const next = { ...form, ...patch };
+    setForm(next);
+    saveFormToStore(next);
   }
 
   function togglePresetSkill(skill) {
-    setForm((prev) => {
-      const already = prev.skills.includes(skill);
-      const next = {
-        ...prev,
-        skills: already ? prev.skills.filter((s) => s !== skill) : [...prev.skills, skill],
-      };
-      saveFormToStore(next);
-      return next;
-    });
+    const skills = form.skills || [];
+    const next = {
+      ...form,
+      skills: skills.includes(skill) ? skills.filter((s) => s !== skill) : [...skills, skill],
+    };
+    setForm(next);
+    saveFormToStore(next);
   }
 
   function addCustomSkill() {
     const skill = customSkillInput.trim();
-    if (!skill) return;
-    if (form.skills.includes(skill)) {
+    if (!skill || (form.skills || []).includes(skill)) {
       setCustomSkillInput("");
       return;
     }
-    setForm((prev) => {
-      const next = { ...prev, skills: [...prev.skills, skill] };
-      saveFormToStore(next);
-      return next;
-    });
+    const next = { ...form, skills: [...(form.skills || []), skill] };
+    setForm(next);
+    saveFormToStore(next);
     setCustomSkillInput("");
   }
 
   function removeSkill(skill) {
-    setForm((prev) => {
-      const next = { ...prev, skills: prev.skills.filter((s) => s !== skill) };
-      saveFormToStore(next);
-      return next;
-    });
+    const next = { ...form, skills: (form.skills || []).filter((s) => s !== skill) };
+    setForm(next);
+    saveFormToStore(next);
   }
 
+  // Selecting a preset role clears skills so fresh chips load for the new role
   function selectPresetRole(role) {
-    updateForm({ role });
+    const next = { ...form, role, skills: [] };
+    setForm(next);
+    saveFormToStore(next);
+    setAvailableSkills(getSkillsForRole(role));
     setShowRoleSuggestions(false);
   }
 
@@ -274,9 +275,9 @@ export default function OnboardingScreen({ navigation }) {
       : r.toLowerCase().includes(form.role.toLowerCase())
   ).slice(0, 8);
 
-  // Custom skills = selected skills that aren't in the current preset list
+  const safeSkills = form.skills || [];
   const allPresetSkillValues = ROLE_SKILL_MAP.flatMap((e) => e.skills);
-  const customSelectedSkills = form.skills.filter((s) => !allPresetSkillValues.includes(s));
+  const customSelectedSkills = safeSkills.filter((s) => !allPresetSkillValues.includes(s));
 
   return (
     <KeyboardAvoidingView
@@ -410,7 +411,7 @@ export default function OnboardingScreen({ navigation }) {
             {availableSkills.length > 0 && (
               <View style={styles.skillChips}>
                 {availableSkills.map((skill) => {
-                  const selected = form.skills.includes(skill);
+                  const selected = safeSkills.includes(skill);
                   return (
                     <TouchableOpacity
                       key={skill}
@@ -522,11 +523,11 @@ export default function OnboardingScreen({ navigation }) {
             </TouchableOpacity>
           ))}
         </View>
-        {form.interviewType === "technical" && form.skills.length > 0 && (
+        {form.interviewType === "technical" && safeSkills.length > 0 && (
           <Text style={styles.typeTip}>
             Technical questions will focus on:{" "}
-            {form.skills.slice(0, 4).join(", ")}
-            {form.skills.length > 4 ? ` +${form.skills.length - 4} more` : ""}
+            {safeSkills.slice(0, 4).join(", ")}
+            {safeSkills.length > 4 ? ` +${safeSkills.length - 4} more` : ""}
           </Text>
         )}
 
