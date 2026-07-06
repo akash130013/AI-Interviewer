@@ -1,12 +1,106 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   View, Text, TextInput, TouchableOpacity,
   ScrollView, StyleSheet, KeyboardAvoidingView, Platform, Alert,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
+import * as SecureStore from "expo-secure-store";
 import { getStreakData } from "../lib/streak";
+
+// ─── Role → skills mapping ────────────────────────────────────────────────────
+
+const ROLE_SKILL_MAP = [
+  {
+    keywords: ["full stack", "fullstack"],
+    skills: ["React.js", "Node.js", "TypeScript", "SQL", "PostgreSQL", "MongoDB", "Docker", "REST APIs", "GraphQL", "AWS", "Git"],
+  },
+  {
+    keywords: ["frontend", "front-end", "front end", "ui developer", "react developer", "angular", "vue"],
+    skills: ["React.js", "Vue.js", "Angular", "TypeScript", "JavaScript", "HTML/CSS", "Redux", "Next.js", "TailwindCSS", "Jest", "Webpack", "Vite"],
+  },
+  {
+    keywords: ["backend", "back-end", "back end", "api developer", "server"],
+    skills: ["Node.js", "Python", "Java", "Go", "SQL", "PostgreSQL", "MongoDB", "Redis", "Docker", "REST APIs", "GraphQL", "Microservices", "AWS"],
+  },
+  {
+    keywords: ["android", "kotlin"],
+    skills: ["Kotlin", "Java", "Android SDK", "Jetpack Compose", "Room DB", "Retrofit", "MVVM", "Firebase", "Coroutines", "RxJava"],
+  },
+  {
+    keywords: ["ios", "swift"],
+    skills: ["Swift", "Objective-C", "UIKit", "SwiftUI", "Core Data", "Combine", "Firebase", "CocoaPods", "ARKit"],
+  },
+  {
+    keywords: ["mobile", "react native", "flutter"],
+    skills: ["React Native", "Flutter", "Kotlin", "Swift", "Firebase", "TypeScript", "Redux"],
+  },
+  {
+    keywords: ["data science", "machine learning", "ml engineer", "ai engineer", "data analyst"],
+    skills: ["Python", "R", "SQL", "Machine Learning", "TensorFlow", "PyTorch", "Pandas", "NumPy", "Tableau", "Power BI", "Spark"],
+  },
+  {
+    keywords: ["data engineer", "etl", "pipeline"],
+    skills: ["Python", "SQL", "Apache Spark", "Airflow", "Kafka", "AWS", "Snowflake", "dbt", "Hadoop", "BigQuery"],
+  },
+  {
+    keywords: ["devops", "sre", "platform engineer", "cloud engineer", "infrastructure"],
+    skills: ["Docker", "Kubernetes", "AWS", "GCP", "Azure", "Terraform", "CI/CD", "Jenkins", "Linux", "Python", "Prometheus", "Grafana"],
+  },
+  {
+    keywords: ["qa", "quality assurance", "test engineer", "automation engineer"],
+    skills: ["Selenium", "Cypress", "Jest", "JUnit", "Postman", "API Testing", "Performance Testing", "JIRA", "Test Automation"],
+  },
+  {
+    keywords: ["product manager", "product management", "program manager"],
+    skills: ["Product Roadmapping", "Agile/Scrum", "SQL", "Figma", "A/B Testing", "JIRA", "User Research", "OKRs", "Go-to-Market"],
+  },
+  {
+    keywords: ["software engineer", "software developer", "swe", "engineer", "developer", "programmer"],
+    skills: ["React.js", "Node.js", "TypeScript", "JavaScript", "Python", "Java", "SQL", "PostgreSQL", "MongoDB", "Docker", "REST APIs", "AWS", "Git"],
+  },
+];
+
+const FALLBACK_SKILLS = [
+  "JavaScript", "Python", "Java", "SQL", "React.js", "Node.js",
+  "TypeScript", "Docker", "REST APIs", "Git", "AWS", "PostgreSQL",
+];
+
+function getSkillsForRole(role) {
+  if (!role || role.trim().length < 2) return [];
+  const lower = role.toLowerCase();
+  for (const entry of ROLE_SKILL_MAP) {
+    if (entry.keywords.some((kw) => lower.includes(kw))) {
+      return entry.skills;
+    }
+  }
+  return FALLBACK_SKILLS;
+}
+
+// ─── Persistence ─────────────────────────────────────────────────────────────
+
+const FORM_KEY = "@crackit_form_v1";
+
+async function saveFormToStore(form) {
+  try {
+    const { jobDescription, ...toSave } = form; // JD is optional, skip to stay under 2KB limit
+    await SecureStore.setItemAsync(FORM_KEY, JSON.stringify(toSave));
+  } catch (_) {}
+}
+
+async function loadFormFromStore() {
+  try {
+    const raw = await SecureStore.getItemAsync(FORM_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+// ─── Component ───────────────────────────────────────────────────────────────
 
 export default function OnboardingScreen({ navigation }) {
   const [streak, setStreak] = useState(0);
+  const [availableSkills, setAvailableSkills] = useState([]);
   const [form, setForm] = useState({
     role: "",
     company: "",
@@ -14,6 +108,7 @@ export default function OnboardingScreen({ navigation }) {
     interviewType: "mixed",
     jobDescription: "",
     companyMode: "General",
+    skills: [],
   });
 
   const COMPANY_MODES = [
@@ -24,9 +119,49 @@ export default function OnboardingScreen({ navigation }) {
     { label: "TCS / Infosys", icon: "🇮🇳" },
   ];
 
+  // Reload saved form each time this screen is focused (e.g. after "Practice again")
+  useFocusEffect(
+    useCallback(() => {
+      loadFormFromStore().then((saved) => {
+        if (saved) {
+          setForm((prev) => ({ ...prev, ...saved }));
+          setAvailableSkills(getSkillsForRole(saved.role || ""));
+        }
+      });
+      getStreakData().then(({ count }) => setStreak(count));
+    }, [])
+  );
+
+  // Update available skills when role changes
   useEffect(() => {
-    getStreakData().then(({ count }) => setStreak(count));
-  }, []);
+    const skills = getSkillsForRole(form.role);
+    setAvailableSkills(skills);
+    // Drop any selected skills that are no longer in the new skill set
+    setForm((prev) => ({
+      ...prev,
+      skills: prev.skills.filter((s) => skills.includes(s)),
+    }));
+  }, [form.role]);
+
+  function updateForm(patch) {
+    setForm((prev) => {
+      const next = { ...prev, ...patch };
+      saveFormToStore(next);
+      return next;
+    });
+  }
+
+  function toggleSkill(skill) {
+    setForm((prev) => {
+      const already = prev.skills.includes(skill);
+      const next = {
+        ...prev,
+        skills: already ? prev.skills.filter((s) => s !== skill) : [...prev.skills, skill],
+      };
+      saveFormToStore(next);
+      return next;
+    });
+  }
 
   function handleStart(quickMode = false) {
     if (!form.role.trim()) {
@@ -41,7 +176,7 @@ export default function OnboardingScreen({ navigation }) {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.topRow}>
           <Text style={styles.title}>Set up your interview</Text>
           <TouchableOpacity
@@ -71,16 +206,24 @@ export default function OnboardingScreen({ navigation }) {
           <Text style={styles.studyBtnArrow}>→</Text>
         </TouchableOpacity>
 
+        {/* Company mode */}
         <Text style={styles.label}>Interview mode</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.modeScroll}>
           {COMPANY_MODES.map(({ label, icon }) => (
             <TouchableOpacity
               key={label}
               style={[styles.modeChip, form.companyMode === label && styles.modeChipSelected]}
-              onPress={() => setForm({ ...form, companyMode: label, company: label === "General" ? form.company : label })}
+              onPress={() =>
+                updateForm({
+                  companyMode: label,
+                  company: label === "General" ? form.company : label,
+                })
+              }
             >
               <Text style={styles.modeIcon}>{icon}</Text>
-              <Text style={[styles.modeLabel, form.companyMode === label && styles.modeLabelSelected]}>{label}</Text>
+              <Text style={[styles.modeLabel, form.companyMode === label && styles.modeLabelSelected]}>
+                {label}
+              </Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -93,31 +236,69 @@ export default function OnboardingScreen({ navigation }) {
           </Text>
         )}
 
+        {/* Role */}
         <Text style={styles.label}>Role you are applying for *</Text>
         <TextInput
           style={styles.input}
           placeholder="e.g. Senior Software Engineer"
           placeholderTextColor="#aaa"
           value={form.role}
-          onChangeText={(v) => setForm({ ...form, role: v })}
+          onChangeText={(v) => updateForm({ role: v })}
         />
 
+        {/* Skills (dynamic based on role) */}
+        {availableSkills.length > 0 && (
+          <>
+            <View style={styles.skillsHeader}>
+              <Text style={styles.label}>Your key skills</Text>
+              {form.skills.length > 0 && (
+                <TouchableOpacity onPress={() => updateForm({ skills: [] })}>
+                  <Text style={styles.clearLink}>Clear all</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            <Text style={styles.skillsHint}>
+              Select skills so Alex focuses technical questions on what you know.
+            </Text>
+            <View style={styles.skillChips}>
+              {availableSkills.map((skill) => {
+                const selected = form.skills.includes(skill);
+                return (
+                  <TouchableOpacity
+                    key={skill}
+                    style={[styles.skillChip, selected && styles.skillChipSelected]}
+                    onPress={() => toggleSkill(skill)}
+                    activeOpacity={0.7}
+                  >
+                    {selected && <Text style={styles.skillCheck}>✓ </Text>}
+                    <Text style={[styles.skillChipText, selected && styles.skillChipTextSelected]}>
+                      {skill}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </>
+        )}
+
+        {/* Target company */}
         <Text style={styles.label}>Target company</Text>
         <TextInput
           style={styles.input}
           placeholder="e.g. Google, Stripe, any startup"
           placeholderTextColor="#aaa"
           value={form.company}
-          onChangeText={(v) => setForm({ ...form, company: v })}
+          onChangeText={(v) => updateForm({ company: v })}
         />
 
+        {/* Years of experience */}
         <Text style={styles.label}>Years of experience</Text>
         <View style={styles.optionRow}>
           {["0-2", "3-5", "6-9", "10+"].map((val) => (
             <TouchableOpacity
               key={val}
               style={[styles.option, form.yearsOfExperience === val && styles.optionSelected]}
-              onPress={() => setForm({ ...form, yearsOfExperience: val })}
+              onPress={() => updateForm({ yearsOfExperience: val })}
             >
               <Text style={[styles.optionText, form.yearsOfExperience === val && styles.optionTextSelected]}>
                 {val}
@@ -126,28 +307,40 @@ export default function OnboardingScreen({ navigation }) {
           ))}
         </View>
 
+        {/* Interview type */}
         <Text style={styles.label}>Interview type</Text>
         <View style={styles.optionRow}>
-          {["behavioral", "technical", "mixed"].map((val) => (
+          {[
+            { val: "behavioral", label: "Behavioral" },
+            { val: "technical", label: "Technical" },
+            { val: "mixed", label: "Mixed" },
+          ].map(({ val, label }) => (
             <TouchableOpacity
               key={val}
               style={[styles.option, form.interviewType === val && styles.optionSelected]}
-              onPress={() => setForm({ ...form, interviewType: val })}
+              onPress={() => updateForm({ interviewType: val })}
             >
               <Text style={[styles.optionText, form.interviewType === val && styles.optionTextSelected]}>
-                {val}
+                {label}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
+        {form.interviewType === "technical" && form.skills.length > 0 && (
+          <Text style={styles.typeTip}>
+            Technical questions will focus on: {form.skills.slice(0, 4).join(", ")}
+            {form.skills.length > 4 ? ` +${form.skills.length - 4} more` : ""}
+          </Text>
+        )}
 
+        {/* Job description */}
         <Text style={styles.label}>Job description (optional)</Text>
         <TextInput
           style={[styles.input, styles.textarea]}
-          placeholder="Paste the job description here for more relevant questions..."
+          placeholder="Paste the job description here for more targeted questions..."
           placeholderTextColor="#aaa"
           value={form.jobDescription}
-          onChangeText={(v) => setForm({ ...form, jobDescription: v })}
+          onChangeText={(v) => setForm((prev) => ({ ...prev, jobDescription: v }))}
           multiline
           numberOfLines={5}
           textAlignVertical="top"
@@ -168,7 +361,10 @@ export default function OnboardingScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
   scroll: { padding: 24, paddingTop: 60 },
-  topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 },
+  topRow: {
+    flexDirection: "row", justifyContent: "space-between",
+    alignItems: "flex-start", marginBottom: 8,
+  },
   settingsBtn: { padding: 4 },
   settingsIcon: { fontSize: 22 },
   title: { fontSize: 26, fontWeight: "600", color: "#111", flex: 1 },
@@ -212,6 +408,30 @@ const styles = StyleSheet.create({
   optionSelected: { backgroundColor: "#111", borderColor: "#111" },
   optionText: { fontSize: 14, color: "#555" },
   optionTextSelected: { color: "#fff" },
+  typeTip: {
+    fontSize: 12, color: "#16a34a", marginTop: 6, lineHeight: 16,
+    backgroundColor: "#f0fdf4", borderRadius: 8, padding: 8,
+    borderWidth: 1, borderColor: "#bbf7d0",
+  },
+
+  // Skills
+  skillsHeader: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    marginTop: 20, marginBottom: 0,
+  },
+  clearLink: { fontSize: 12, color: "#888", textDecorationLine: "underline" },
+  skillsHint: { fontSize: 12, color: "#aaa", marginBottom: 10, lineHeight: 16 },
+  skillChips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  skillChip: {
+    flexDirection: "row", alignItems: "center",
+    paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20,
+    borderWidth: 1.5, borderColor: "#e0e0e0", backgroundColor: "#fafafa",
+  },
+  skillChipSelected: { backgroundColor: "#111", borderColor: "#111" },
+  skillCheck: { fontSize: 11, color: "#fff", fontWeight: "700" },
+  skillChipText: { fontSize: 13, color: "#555" },
+  skillChipTextSelected: { color: "#fff", fontWeight: "500" },
+
   button: {
     backgroundColor: "#111", borderRadius: 14, paddingVertical: 16,
     alignItems: "center", marginTop: 36, marginBottom: 10,

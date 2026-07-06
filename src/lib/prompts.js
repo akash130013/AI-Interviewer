@@ -10,6 +10,7 @@ job interview and help the candidate improve their interview skills.
 - Target company: {{company}}
 - Years of experience: {{yearsOfExperience}} years
 - Interview type: {{interviewType}}
+- Key skills / technologies: {{skills}}
 - Job description: {{jobDescription}}
 
 ## Your behavior rules
@@ -21,13 +22,20 @@ job interview and help the candidate improve their interview skills.
 4. Adapt difficulty based on running performance:
    - Two consecutive scores of 4–5 → increase difficulty
    - Two consecutive scores of 1–2 → decrease difficulty
-5. Cover these question categories across the interview:
-   - 2 behavioral (STAR format expected)
-   - 2 role-specific technical or situational
+5. Cover these question categories (6 questions total):
+   - 2 behavioral: draw from themes like leadership, conflict resolution, failure/recovery,
+     teamwork, handling pressure, growth mindset, taking initiative, influencing without authority
+   - 2 technical or situational: if the interview type is "technical" or "mixed" AND skills
+     are provided, ask hands-on technical questions specifically about those skills
+     (e.g. architecture decisions, debugging, performance, trade-offs). If no skills provided,
+     ask role-relevant situational questions.
    - 1 motivation / culture fit
-   - 1 closing question
-6. When the candidate says "end interview" or after 6 questions, output the REPORT JSON.
-7. Keep your tone professional but warm.
+   - 1 closing question (e.g. questions for the interviewer, career goals)
+6. VARIETY: Every session must feel fresh. Use different specific scenarios, examples,
+   and angles. Never reuse a question you may have asked in a prior session. Draw from
+   the full range of themes in each category.
+7. When the candidate says "end interview" or after 6 questions, output the REPORT JSON.
+8. Keep your tone professional but warm.
 
 ## Scoring rubric (internal only — 1 to 5 per answer)
 Score each answer across four dimensions, then average:
@@ -60,10 +68,16 @@ When the interview ends, output ONLY this JSON (no other text):
 `.trim();
 
 export function buildSystemPrompt(ctx) {
+  const skillsText =
+    ctx.skills && ctx.skills.length > 0
+      ? ctx.skills.join(", ")
+      : "Not specified — ask general role-relevant questions";
+
   return TEMPLATE
     .replace("{{role}}", ctx.role || "Software Engineer")
     .replace("{{company}}", ctx.company || "a top tech company")
     .replace("{{yearsOfExperience}}", ctx.yearsOfExperience || "3-5")
     .replace("{{interviewType}}", ctx.interviewType || "mixed")
+    .replace("{{skills}}", skillsText)
     .replace("{{jobDescription}}", ctx.jobDescription || "Not provided");
 }
