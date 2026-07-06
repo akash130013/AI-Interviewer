@@ -7,6 +7,34 @@ import { useFocusEffect } from "@react-navigation/native";
 import * as SecureStore from "expo-secure-store";
 import { getStreakData } from "../lib/streak";
 
+// ─── Preset role list (shown in dropdown) ────────────────────────────────────
+
+const PRESET_ROLES = [
+  // Engineering
+  "Software Engineer", "Senior Software Engineer", "Software Developer",
+  "Frontend Developer", "Backend Developer", "Full Stack Developer",
+  "React Developer", "Node.js Developer",
+  "Android Developer", "iOS Developer", "Mobile Developer",
+  "DevOps Engineer", "Cloud Engineer", "Platform Engineer", "SRE",
+  "Data Scientist", "Machine Learning Engineer", "AI Engineer",
+  "Data Analyst", "Data Engineer",
+  "QA Engineer", "Test Automation Engineer",
+  "Cybersecurity Engineer", "Security Analyst",
+  // Design
+  "Graphic Designer", "Visual Designer", "Brand Designer",
+  "UI/UX Designer", "Product Designer",
+  // Product & Management
+  "Product Manager", "Technical Program Manager",
+  "Project Manager", "Operations Manager",
+  // Marketing & Content
+  "Digital Marketing Manager", "SEO Specialist", "Social Media Manager",
+  "Content Writer", "Copywriter", "Technical Writer",
+  // Business
+  "Sales Manager", "Business Development Manager", "Account Manager",
+  "HR Manager", "Talent Acquisition Specialist", "Recruiter",
+  "Finance Manager", "Financial Analyst", "Accountant",
+];
+
 // ─── Role → skills mapping ────────────────────────────────────────────────────
 
 const ROLE_SKILL_MAP = [
@@ -15,11 +43,11 @@ const ROLE_SKILL_MAP = [
     skills: ["React.js", "Node.js", "TypeScript", "SQL", "PostgreSQL", "MongoDB", "Docker", "REST APIs", "GraphQL", "AWS", "Git"],
   },
   {
-    keywords: ["frontend", "front-end", "front end", "ui developer", "react developer", "angular", "vue"],
+    keywords: ["frontend", "front-end", "front end", "react developer", "vue", "angular"],
     skills: ["React.js", "Vue.js", "Angular", "TypeScript", "JavaScript", "HTML/CSS", "Redux", "Next.js", "TailwindCSS", "Jest", "Webpack", "Vite"],
   },
   {
-    keywords: ["backend", "back-end", "back end", "api developer", "server"],
+    keywords: ["backend", "back-end", "back end", "node.js developer", "api developer"],
     skills: ["Node.js", "Python", "Java", "Go", "SQL", "PostgreSQL", "MongoDB", "Redis", "Docker", "REST APIs", "GraphQL", "Microservices", "AWS"],
   },
   {
@@ -31,38 +59,74 @@ const ROLE_SKILL_MAP = [
     skills: ["Swift", "Objective-C", "UIKit", "SwiftUI", "Core Data", "Combine", "Firebase", "CocoaPods", "ARKit"],
   },
   {
-    keywords: ["mobile", "react native", "flutter"],
+    keywords: ["mobile developer", "react native", "flutter"],
     skills: ["React Native", "Flutter", "Kotlin", "Swift", "Firebase", "TypeScript", "Redux"],
   },
   {
-    keywords: ["data science", "machine learning", "ml engineer", "ai engineer", "data analyst"],
-    skills: ["Python", "R", "SQL", "Machine Learning", "TensorFlow", "PyTorch", "Pandas", "NumPy", "Tableau", "Power BI", "Spark"],
+    keywords: ["data scientist", "machine learning", "ml engineer", "ai engineer"],
+    skills: ["Python", "R", "SQL", "Machine Learning", "TensorFlow", "PyTorch", "Pandas", "NumPy", "Tableau", "Spark"],
+  },
+  {
+    keywords: ["data analyst", "business intelligence"],
+    skills: ["SQL", "Python", "Excel", "Tableau", "Power BI", "Google Analytics", "Data Visualization", "Statistics"],
   },
   {
     keywords: ["data engineer", "etl", "pipeline"],
-    skills: ["Python", "SQL", "Apache Spark", "Airflow", "Kafka", "AWS", "Snowflake", "dbt", "Hadoop", "BigQuery"],
+    skills: ["Python", "SQL", "Apache Spark", "Airflow", "Kafka", "AWS", "Snowflake", "dbt", "BigQuery"],
   },
   {
     keywords: ["devops", "sre", "platform engineer", "cloud engineer", "infrastructure"],
-    skills: ["Docker", "Kubernetes", "AWS", "GCP", "Azure", "Terraform", "CI/CD", "Jenkins", "Linux", "Python", "Prometheus", "Grafana"],
+    skills: ["Docker", "Kubernetes", "AWS", "GCP", "Azure", "Terraform", "CI/CD", "Jenkins", "Linux", "Python", "Prometheus"],
   },
   {
-    keywords: ["qa", "quality assurance", "test engineer", "automation engineer"],
+    keywords: ["qa", "quality assurance", "test automation", "sdet"],
     skills: ["Selenium", "Cypress", "Jest", "JUnit", "Postman", "API Testing", "Performance Testing", "JIRA", "Test Automation"],
   },
   {
-    keywords: ["product manager", "product management", "program manager"],
+    keywords: ["cybersecurity", "security engineer", "security analyst", "infosec"],
+    skills: ["Penetration Testing", "SIEM", "Network Security", "Firewalls", "SOC", "Python", "Linux", "OWASP", "Vulnerability Assessment"],
+  },
+  {
+    keywords: ["product manager", "technical program manager"],
     skills: ["Product Roadmapping", "Agile/Scrum", "SQL", "Figma", "A/B Testing", "JIRA", "User Research", "OKRs", "Go-to-Market"],
   },
   {
-    keywords: ["software engineer", "software developer", "swe", "engineer", "developer", "programmer"],
-    skills: ["React.js", "Node.js", "TypeScript", "JavaScript", "Python", "Java", "SQL", "PostgreSQL", "MongoDB", "Docker", "REST APIs", "AWS", "Git"],
+    keywords: ["project manager", "program manager", "operations manager"],
+    skills: ["Agile/Scrum", "JIRA", "Risk Management", "Stakeholder Management", "MS Project", "Confluence", "Budget Management"],
   },
-];
-
-const FALLBACK_SKILLS = [
-  "JavaScript", "Python", "Java", "SQL", "React.js", "Node.js",
-  "TypeScript", "Docker", "REST APIs", "Git", "AWS", "PostgreSQL",
+  {
+    keywords: ["graphic designer", "visual designer", "brand designer"],
+    skills: ["Figma", "Adobe Illustrator", "Adobe Photoshop", "InDesign", "After Effects", "Canva", "Typography", "Brand Identity", "Color Theory"],
+  },
+  {
+    keywords: ["ui/ux", "ux designer", "ui designer", "product designer", "user experience"],
+    skills: ["Figma", "Adobe XD", "Sketch", "InVision", "Prototyping", "User Research", "Wireframing", "Design Systems", "Usability Testing"],
+  },
+  {
+    keywords: ["content writer", "copywriter", "technical writer", "content creator"],
+    skills: ["SEO", "WordPress", "Copywriting", "Content Strategy", "Social Media", "Google Analytics", "Email Marketing"],
+  },
+  {
+    keywords: ["digital marketing", "seo specialist", "social media manager", "growth", "marketing manager", "marketing"],
+    skills: ["Google Ads", "Facebook/Meta Ads", "SEO", "Google Analytics", "HubSpot", "Email Marketing", "Content Strategy", "CRM", "Canva"],
+  },
+  {
+    keywords: ["sales manager", "business development", "account manager"],
+    skills: ["CRM", "Salesforce", "Lead Generation", "Cold Outreach", "Pipeline Management", "Negotiation", "PowerPoint"],
+  },
+  {
+    keywords: ["hr manager", "human resources", "talent acquisition", "recruiter"],
+    skills: ["Recruitment", "HRIS", "Performance Management", "Employee Relations", "Payroll", "Labor Laws", "Onboarding"],
+  },
+  {
+    keywords: ["finance manager", "financial analyst", "accountant", "cfo"],
+    skills: ["Excel", "Financial Modeling", "SAP", "QuickBooks", "Tally", "Financial Reporting", "Budgeting", "GAAP", "Tableau"],
+  },
+  // Generic fallback for "software engineer", "developer", "engineer", "programmer"
+  {
+    keywords: ["software engineer", "software developer", "swe", "engineer", "developer", "programmer"],
+    skills: ["React.js", "Node.js", "TypeScript", "JavaScript", "Python", "Java", "SQL", "PostgreSQL", "Docker", "AWS", "REST APIs", "Git"],
+  },
 ];
 
 function getSkillsForRole(role) {
@@ -73,7 +137,7 @@ function getSkillsForRole(role) {
       return entry.skills;
     }
   }
-  return FALLBACK_SKILLS;
+  return []; // No match → empty, user can add custom skills
 }
 
 // ─── Persistence ─────────────────────────────────────────────────────────────
@@ -82,7 +146,7 @@ const FORM_KEY = "@crackit_form_v1";
 
 async function saveFormToStore(form) {
   try {
-    const { jobDescription, ...toSave } = form; // JD is optional, skip to stay under 2KB limit
+    const { jobDescription, ...toSave } = form;
     await SecureStore.setItemAsync(FORM_KEY, JSON.stringify(toSave));
   } catch (_) {}
 }
@@ -101,6 +165,8 @@ async function loadFormFromStore() {
 export default function OnboardingScreen({ navigation }) {
   const [streak, setStreak] = useState(0);
   const [availableSkills, setAvailableSkills] = useState([]);
+  const [showRoleSuggestions, setShowRoleSuggestions] = useState(false);
+  const [customSkillInput, setCustomSkillInput] = useState("");
   const [form, setForm] = useState({
     role: "",
     company: "",
@@ -119,7 +185,6 @@ export default function OnboardingScreen({ navigation }) {
     { label: "TCS / Infosys", icon: "🇮🇳" },
   ];
 
-  // Reload saved form each time this screen is focused (e.g. after "Practice again")
   useFocusEffect(
     useCallback(() => {
       loadFormFromStore().then((saved) => {
@@ -132,15 +197,18 @@ export default function OnboardingScreen({ navigation }) {
     }, [])
   );
 
-  // Update available skills when role changes
   useEffect(() => {
     const skills = getSkillsForRole(form.role);
     setAvailableSkills(skills);
-    // Drop any selected skills that are no longer in the new skill set
-    setForm((prev) => ({
-      ...prev,
-      skills: prev.skills.filter((s) => skills.includes(s)),
-    }));
+    // Remove selected preset skills that no longer match the new role
+    // Keep custom skills (those that never were in any preset list)
+    setForm((prev) => {
+      const presetSkillsForNewRole = skills;
+      const filteredSkills = prev.skills.filter(
+        (s) => presetSkillsForNewRole.includes(s) || !ROLE_SKILL_MAP.flatMap((e) => e.skills).includes(s)
+      );
+      return { ...prev, skills: filteredSkills };
+    });
   }, [form.role]);
 
   function updateForm(patch) {
@@ -151,7 +219,7 @@ export default function OnboardingScreen({ navigation }) {
     });
   }
 
-  function toggleSkill(skill) {
+  function togglePresetSkill(skill) {
     setForm((prev) => {
       const already = prev.skills.includes(skill);
       const next = {
@@ -163,6 +231,34 @@ export default function OnboardingScreen({ navigation }) {
     });
   }
 
+  function addCustomSkill() {
+    const skill = customSkillInput.trim();
+    if (!skill) return;
+    if (form.skills.includes(skill)) {
+      setCustomSkillInput("");
+      return;
+    }
+    setForm((prev) => {
+      const next = { ...prev, skills: [...prev.skills, skill] };
+      saveFormToStore(next);
+      return next;
+    });
+    setCustomSkillInput("");
+  }
+
+  function removeSkill(skill) {
+    setForm((prev) => {
+      const next = { ...prev, skills: prev.skills.filter((s) => s !== skill) };
+      saveFormToStore(next);
+      return next;
+    });
+  }
+
+  function selectPresetRole(role) {
+    updateForm({ role });
+    setShowRoleSuggestions(false);
+  }
+
   function handleStart(quickMode = false) {
     if (!form.role.trim()) {
       Alert.alert("Required", "Please enter the role you are applying for.");
@@ -171,12 +267,26 @@ export default function OnboardingScreen({ navigation }) {
     navigation.navigate("Interview", { candidateContext: { ...form, quickMode } });
   }
 
+  // Roles to show in dropdown — filtered by what's typed
+  const filteredPresets = PRESET_ROLES.filter((r) =>
+    form.role.trim() === ""
+      ? true
+      : r.toLowerCase().includes(form.role.toLowerCase())
+  ).slice(0, 8);
+
+  // Custom skills = selected skills that aren't in the current preset list
+  const allPresetSkillValues = ROLE_SKILL_MAP.flatMap((e) => e.skills);
+  const customSelectedSkills = form.skills.filter((s) => !allPresetSkillValues.includes(s));
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.topRow}>
           <Text style={styles.title}>Set up your interview</Text>
           <TouchableOpacity
@@ -197,7 +307,10 @@ export default function OnboardingScreen({ navigation }) {
           </View>
         )}
 
-        <TouchableOpacity style={styles.studyBtn} onPress={() => navigation.navigate("StudyLibrary")}>
+        <TouchableOpacity
+          style={styles.studyBtn}
+          onPress={() => navigation.navigate("StudyLibrary")}
+        >
           <Text style={styles.studyBtnIcon}>📚</Text>
           <View>
             <Text style={styles.studyBtnTitle}>Study Topics First</Text>
@@ -206,7 +319,7 @@ export default function OnboardingScreen({ navigation }) {
           <Text style={styles.studyBtnArrow}>→</Text>
         </TouchableOpacity>
 
-        {/* Company mode */}
+        {/* Interview mode */}
         <Text style={styles.label}>Interview mode</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.modeScroll}>
           {COMPANY_MODES.map(({ label, icon }) => (
@@ -236,18 +349,50 @@ export default function OnboardingScreen({ navigation }) {
           </Text>
         )}
 
-        {/* Role */}
+        {/* Role — with dropdown suggestions */}
         <Text style={styles.label}>Role you are applying for *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="e.g. Senior Software Engineer"
-          placeholderTextColor="#aaa"
-          value={form.role}
-          onChangeText={(v) => updateForm({ role: v })}
-        />
+        <View style={styles.roleWrapper}>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g. Senior Software Engineer"
+            placeholderTextColor="#aaa"
+            value={form.role}
+            onChangeText={(v) => {
+              updateForm({ role: v });
+              setShowRoleSuggestions(true);
+            }}
+            onFocus={() => setShowRoleSuggestions(true)}
+            onBlur={() => setTimeout(() => setShowRoleSuggestions(false), 180)}
+          />
+          <TouchableOpacity
+            style={styles.roleDropdownIcon}
+            onPress={() => setShowRoleSuggestions((v) => !v)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.roleDropdownCaret}>{showRoleSuggestions ? "▲" : "▼"}</Text>
+          </TouchableOpacity>
+        </View>
 
-        {/* Skills (dynamic based on role) */}
-        {availableSkills.length > 0 && (
+        {showRoleSuggestions && filteredPresets.length > 0 && (
+          <View style={styles.suggestionsBox}>
+            {filteredPresets.map((r) => (
+              <TouchableOpacity
+                key={r}
+                style={[styles.suggestionItem, form.role === r && styles.suggestionItemActive]}
+                onPress={() => selectPresetRole(r)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.suggestionText, form.role === r && styles.suggestionTextActive]}>
+                  {r}
+                </Text>
+                {form.role === r && <Text style={styles.suggestionCheck}>✓</Text>}
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        {/* Skills */}
+        {(availableSkills.length > 0 || form.skills.length > 0) && (
           <>
             <View style={styles.skillsHeader}>
               <Text style={styles.label}>Your key skills</Text>
@@ -260,23 +405,74 @@ export default function OnboardingScreen({ navigation }) {
             <Text style={styles.skillsHint}>
               Select skills so Alex focuses technical questions on what you know.
             </Text>
-            <View style={styles.skillChips}>
-              {availableSkills.map((skill) => {
-                const selected = form.skills.includes(skill);
-                return (
-                  <TouchableOpacity
-                    key={skill}
-                    style={[styles.skillChip, selected && styles.skillChipSelected]}
-                    onPress={() => toggleSkill(skill)}
-                    activeOpacity={0.7}
-                  >
-                    {selected && <Text style={styles.skillCheck}>✓ </Text>}
-                    <Text style={[styles.skillChipText, selected && styles.skillChipTextSelected]}>
-                      {skill}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
+
+            {/* Preset skill chips */}
+            {availableSkills.length > 0 && (
+              <View style={styles.skillChips}>
+                {availableSkills.map((skill) => {
+                  const selected = form.skills.includes(skill);
+                  return (
+                    <TouchableOpacity
+                      key={skill}
+                      style={[styles.skillChip, selected && styles.skillChipSelected]}
+                      onPress={() => togglePresetSkill(skill)}
+                      activeOpacity={0.7}
+                    >
+                      {selected && <Text style={styles.skillCheck}>✓ </Text>}
+                      <Text style={[styles.skillChipText, selected && styles.skillChipTextSelected]}>
+                        {skill}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            )}
+
+            {/* Custom selected skills (not in any preset list) */}
+            {customSelectedSkills.length > 0 && (
+              <View style={[styles.skillChips, { marginTop: 8 }]}>
+                {customSelectedSkills.map((skill) => (
+                  <View key={skill} style={[styles.skillChip, styles.skillChipCustom]}>
+                    <Text style={styles.skillChipTextSelected}>{skill}</Text>
+                    <TouchableOpacity onPress={() => removeSkill(skill)} style={styles.removeSkillBtn}>
+                      <Text style={styles.removeSkillText}>✕</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            )}
+          </>
+        )}
+
+        {/* Custom skill add — always visible if role is entered */}
+        {form.role.trim().length > 1 && (
+          <>
+            {availableSkills.length === 0 && form.skills.length === 0 && (
+              <View style={styles.skillsHeader}>
+                <Text style={styles.label}>Your key skills</Text>
+              </View>
+            )}
+            <View style={styles.addSkillRow}>
+              <TextInput
+                style={styles.addSkillInput}
+                placeholder="Add a skill not listed above..."
+                placeholderTextColor="#bbb"
+                value={customSkillInput}
+                onChangeText={setCustomSkillInput}
+                onSubmitEditing={addCustomSkill}
+                returnKeyType="done"
+              />
+              <TouchableOpacity
+                style={[
+                  styles.addSkillBtn,
+                  !customSkillInput.trim() && styles.addSkillBtnDisabled,
+                ]}
+                onPress={addCustomSkill}
+                activeOpacity={0.7}
+                disabled={!customSkillInput.trim()}
+              >
+                <Text style={styles.addSkillBtnText}>+ Add</Text>
+              </TouchableOpacity>
             </View>
           </>
         )}
@@ -328,7 +524,8 @@ export default function OnboardingScreen({ navigation }) {
         </View>
         {form.interviewType === "technical" && form.skills.length > 0 && (
           <Text style={styles.typeTip}>
-            Technical questions will focus on: {form.skills.slice(0, 4).join(", ")}
+            Technical questions will focus on:{" "}
+            {form.skills.slice(0, 4).join(", ")}
             {form.skills.length > 4 ? ` +${form.skills.length - 4} more` : ""}
           </Text>
         )}
@@ -394,6 +591,7 @@ const styles = StyleSheet.create({
   studyBtnTitle: { fontSize: 14, fontWeight: "600", color: "#5b21b6" },
   studyBtnSub: { fontSize: 12, color: "#7c3aed", marginTop: 2 },
   studyBtnArrow: { fontSize: 16, color: "#7c3aed", marginLeft: "auto" },
+
   label: { fontSize: 13, fontWeight: "500", color: "#444", marginBottom: 8, marginTop: 20 },
   input: {
     borderWidth: 1, borderColor: "#e0e0e0", borderRadius: 12,
@@ -414,12 +612,36 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: "#bbf7d0",
   },
 
+  // Role dropdown
+  roleWrapper: { position: "relative" },
+  roleDropdownIcon: {
+    position: "absolute", right: 14, top: 0, bottom: 0,
+    justifyContent: "center", alignItems: "center",
+  },
+  roleDropdownCaret: { fontSize: 11, color: "#aaa" },
+  suggestionsBox: {
+    borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 12,
+    backgroundColor: "#fff", marginTop: 4,
+    shadowColor: "#000", shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08, shadowRadius: 8, elevation: 4,
+    overflow: "hidden",
+  },
+  suggestionItem: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingHorizontal: 16, paddingVertical: 13,
+    borderBottomWidth: 1, borderBottomColor: "#f3f4f6",
+  },
+  suggestionItemActive: { backgroundColor: "#f9fafb" },
+  suggestionText: { fontSize: 14, color: "#374151" },
+  suggestionTextActive: { fontWeight: "600", color: "#111" },
+  suggestionCheck: { fontSize: 13, color: "#111", fontWeight: "700" },
+
   // Skills
   skillsHeader: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    marginTop: 20, marginBottom: 0,
+    marginTop: 20,
   },
-  clearLink: { fontSize: 12, color: "#888", textDecorationLine: "underline" },
+  clearLink: { fontSize: 12, color: "#888", textDecorationLine: "underline", marginTop: 20 },
   skillsHint: { fontSize: 12, color: "#aaa", marginBottom: 10, lineHeight: 16 },
   skillChips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   skillChip: {
@@ -428,9 +650,32 @@ const styles = StyleSheet.create({
     borderWidth: 1.5, borderColor: "#e0e0e0", backgroundColor: "#fafafa",
   },
   skillChipSelected: { backgroundColor: "#111", borderColor: "#111" },
+  skillChipCustom: {
+    backgroundColor: "#1d4ed8", borderColor: "#1d4ed8",
+    paddingRight: 6, gap: 6,
+  },
   skillCheck: { fontSize: 11, color: "#fff", fontWeight: "700" },
   skillChipText: { fontSize: 13, color: "#555" },
   skillChipTextSelected: { color: "#fff", fontWeight: "500" },
+  removeSkillBtn: { paddingHorizontal: 4 },
+  removeSkillText: { fontSize: 11, color: "rgba(255,255,255,0.8)", fontWeight: "700" },
+
+  // Add custom skill
+  addSkillRow: {
+    flexDirection: "row", gap: 8, marginTop: 10, alignItems: "center",
+  },
+  addSkillInput: {
+    flex: 1, borderWidth: 1, borderColor: "#e0e0e0", borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 10,
+    fontSize: 14, color: "#111", backgroundColor: "#fafafa",
+    borderStyle: "dashed",
+  },
+  addSkillBtn: {
+    backgroundColor: "#111", borderRadius: 10,
+    paddingHorizontal: 16, paddingVertical: 10,
+  },
+  addSkillBtnDisabled: { backgroundColor: "#ccc" },
+  addSkillBtnText: { color: "#fff", fontSize: 13, fontWeight: "600" },
 
   button: {
     backgroundColor: "#111", borderRadius: 14, paddingVertical: 16,
