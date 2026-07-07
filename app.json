@@ -15,7 +15,7 @@
     },
     "platforms": ["android"],
     "android": {
-      "package": "com.richa130013.aiinterviewer",
+      "package": "com.crackit.app",
       "versionCode": 1,
       "permissions": [
         "RECORD_AUDIO",
@@ -26,7 +26,7 @@
       [
         "expo-av",
         {
-          "microphonePermission": "Allow AI Interviewer to access your microphone for voice interviews."
+          "microphonePermission": "Allow CrackIt to access your microphone for voice interviews."
         }
       ],
       [
