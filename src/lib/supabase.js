@@ -20,13 +20,21 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 });
 
 export async function saveInterview(userId, candidateContext, report) {
+  // Embed context into the report JSONB so history cards can show type + skills
+  const enrichedReport = {
+    ...report,
+    interview_type: candidateContext.interviewType || "mixed",
+    skills: Array.isArray(candidateContext.skills) ? candidateContext.skills : [],
+    quick_mode: candidateContext.quickMode === true,
+  };
+
   const { error } = await supabase.from("interviews").insert({
     user_id: userId,
     role: candidateContext.role,
     company: candidateContext.company || null,
     overall_score: report.overall_score,
     interview_readiness_percent: report.interview_readiness_percent,
-    report,
+    report: enrichedReport,
   });
   if (error) console.error("Failed to save interview:", error.message);
 }
