@@ -393,9 +393,9 @@ export default function DashboardScreen({ navigation }) {
               </View>
             )}
           </View>
-          <View style={styles.avatar}>
+          <TouchableOpacity style={styles.avatar} onPress={() => navigation.navigate("Settings")} activeOpacity={0.7}>
             <Text style={styles.avatarLetter}>{email ? email[0].toUpperCase() : "?"}</Text>
-          </View>
+          </TouchableOpacity>
         </View>
 
         {/* ── Streak banner ── */}
