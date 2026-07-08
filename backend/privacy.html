@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — CrackIt</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --surface: #f8fafc;
+      --text: #334155;
+      --heading: #0f172a;
+      --muted: #64748b;
+      --accent: #2563eb;
+      --border: #e2e8f0;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f172a; --surface: #1e293b; --text: #cbd5e1;
+        --heading: #f1f5f9; --muted: #94a3b8; --accent: #60a5fa; --border: #334155;
+      }
+    }
+    :root[data-theme="light"] {
+      --bg:#ffffff; --surface:#f8fafc; --text:#334155; --heading:#0f172a;
+      --muted:#64748b; --accent:#2563eb; --border:#e2e8f0;
+    }
+    :root[data-theme="dark"] {
+      --bg:#0f172a; --surface:#1e293b; --text:#cbd5e1; --heading:#f1f5f9;
+      --muted:#94a3b8; --accent:#60a5fa; --border:#334155;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      font-size: 16px; line-height: 1.75; padding: 0 20px;
+    }
+    .wrap { max-width: 680px; margin: 0 auto; padding: 64px 0 100px; }
+    header { margin-bottom: 48px; padding-bottom: 32px; border-bottom: 1px solid var(--border); }
+    .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
+    .brand-icon {
+      width: 42px; height: 42px; background: var(--heading); border-radius: 11px;
+      display: flex; align-items: center; justify-content: center; font-size: 22px;
+    }
+    .brand-name { font-size: 20px; font-weight: 700; color: var(--heading); letter-spacing: -0.02em; }
+    h1 { font-size: 30px; font-weight: 700; color: var(--heading); letter-spacing: -0.03em; margin-bottom: 10px; text-wrap: balance; }
+    .meta { font-size: 14px; color: var(--muted); }
+    h2 { font-size: 16px; font-weight: 700; color: var(--heading); margin: 44px 0 14px; letter-spacing: -0.01em; text-transform: uppercase; letter-spacing: 0.04em; }
+    p { margin-bottom: 14px; }
+    p:last-child { margin-bottom: 0; }
+    ul { padding-left: 20px; margin-bottom: 14px; }
+    li { margin-bottom: 8px; }
+    strong { color: var(--heading); font-weight: 600; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0; }
+    @media (max-width: 500px) { .grid { grid-template-columns: 1fr; } }
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px 16px;
+    }
+    .card-name { font-size: 14px; font-weight: 600; color: var(--heading); margin-bottom: 3px; }
+    .card-desc { font-size: 13px; color: var(--muted); line-height: 1.45; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    hr { border: none; border-top: 1px solid var(--border); margin: 48px 0; }
+    .contact {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px 24px; margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="brand-icon">🎙</div>
+        <span class="brand-name">CrackIt</span>
+      </div>
+      <h1>Privacy Policy</h1>
+      <p class="meta">Effective: July 8, 2026 &nbsp;·&nbsp; Last updated: July 8, 2026</p>
+    </header>
+
+    <p>CrackIt ("we", "us", or "our") is an AI-powered mock interview coaching app. This policy explains what data we collect, how we use it, and your rights over it. We aim to be direct and clear.</p>
+
+    <h2>1. What we collect</h2>
+    <ul>
+      <li><strong>Email address</strong> — collected when you create an account. Used only to identify your account and send you important notices.</li>
+      <li><strong>Voice recordings</strong> — when you answer interview questions, your voice is recorded temporarily and sent to Deepgram for speech-to-text conversion. Recordings are <strong>not stored</strong> by CrackIt once transcription is complete.</li>
+      <li><strong>Interview data</strong> — text transcripts of your answers, AI-generated questions, scores, and feedback are saved to your account so you can review your progress.</li>
+      <li><strong>Local device data</strong> — streak counts and form preferences are stored on your device only and never transmitted to our servers.</li>
+    </ul>
+
+    <h2>2. How we use it</h2>
+    <ul>
+      <li>To conduct and personalise your mock interview sessions</li>
+      <li>To display your interview history and progress over time</li>
+      <li>To send optional daily practice reminders (only if you enable notifications)</li>
+      <li>To diagnose technical issues and improve the app</li>
+    </ul>
+    <p>We do <strong>not</strong> sell your data. We do not use your data for advertising.</p>
+
+    <h2>3. Third-party services</h2>
+    <p>CrackIt relies on the following services. Each processes data only as needed to provide their function.</p>
+    <div class="grid">
+      <div class="card">
+        <div class="card-name">Supabase</div>
+        <div class="card-desc">Authentication and database. Stores your account and interview history securely.</div>
+      </div>
+      <div class="card">
+        <div class="card-name">Deepgram</div>
+        <div class="card-desc">Converts your voice answers to text. Audio is processed in real time and not retained.</div>
+      </div>
+      <div class="card">
+        <div class="card-name">Groq / Meta Llama</div>
+        <div class="card-desc">Powers the AI interviewer. Generates questions and evaluates responses.</div>
+      </div>
+      <div class="card">
+        <div class="card-name">Vercel</div>
+        <div class="card-desc">Hosts our API backend. Requests are routed through Vercel's infrastructure.</div>
+      </div>
+    </div>
+
+    <h2>4. Data retention</h2>
+    <p>Your interview history is kept for as long as your account is active. When you delete your account, all associated personal data is permanently removed from our systems within 30 days.</p>
+
+    <h2>5. Security</h2>
+    <p>All data in transit is encrypted via HTTPS/TLS. Data at rest is protected by Supabase's Row Level Security, which ensures only you can access your own records.</p>
+
+    <h2>6. Children's privacy</h2>
+    <p>CrackIt is not directed at children under 13. We do not knowingly collect personal information from children under 13. If you believe a child has provided us personal data, contact us and we will delete it promptly.</p>
+
+    <h2>7. Your rights</h2>
+    <ul>
+      <li><strong>Access:</strong> View all your interview data inside the app at any time.</li>
+      <li><strong>Deletion:</strong> Delete your account from the Settings screen to permanently remove all your data.</li>
+      <li><strong>Export:</strong> Email us to request a copy of your data in a portable format.</li>
+    </ul>
+
+    <h2>8. Changes to this policy</h2>
+    <p>If we make material changes, we will update the "Last updated" date above and notify you through the app. Continued use after changes constitutes acceptance of the revised policy.</p>
+
+    <hr>
+
+    <h2>Contact</h2>
+    <p>Questions or requests about your data:</p>
+    <div class="contact">
+      <p>
+        <strong>CrackIt Labs</strong><br>
+        Email: <a href="mailto:akash130013@gmail.com">akash130013@gmail.com</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>
