@@ -201,15 +201,6 @@ export default function SettingsScreen({ navigation }) {
             destructive
             showArrow={false}
           />
-          <Divider />
-          <Row
-            icon="🗑️"
-            label="Delete Account"
-            subtitle="Permanently delete all your data"
-            onPress={handleDeleteAccount}
-            destructive
-            showArrow={false}
-          />
         </Section>
 
         {/* Version */}
