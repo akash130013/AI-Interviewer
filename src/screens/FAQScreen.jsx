@@ -162,7 +162,7 @@ export default function FAQScreen({ navigation }) {
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>Still have a question?</Text>
-          <Text style={styles.footerEmail}>akash130013@gmail.com</Text>
+          <Text style={styles.footerEmail}>richmediahub@gmail.com</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
