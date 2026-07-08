@@ -39,6 +39,14 @@ export async function saveInterview(userId, candidateContext, report) {
   if (error) console.error("Failed to save interview:", error.message);
 }
 
+export async function deleteAllUserData(userId) {
+  const { error } = await supabase
+    .from("interviews")
+    .delete()
+    .eq("user_id", userId);
+  if (error) throw error;
+}
+
 export async function getPastInterviews(userId) {
   const { data, error } = await supabase
     .from("interviews")

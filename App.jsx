@@ -21,6 +21,7 @@ import StudyLibraryScreen from "./src/screens/StudyLibraryScreen";
 import StudyTopicListScreen from "./src/screens/StudyTopicListScreen";
 import StudyTopicScreen from "./src/screens/StudyTopicScreen";
 import SettingsScreen from "./src/screens/SettingsScreen";
+import FAQScreen from "./src/screens/FAQScreen";
 
 const Stack = createStackNavigator();
 
@@ -49,6 +50,7 @@ function AppNavigator() {
         <Stack.Screen name="StudyTopicList" component={StudyTopicListScreen} />
         <Stack.Screen name="StudyTopic" component={StudyTopicScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
+        <Stack.Screen name="FAQ" component={FAQScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

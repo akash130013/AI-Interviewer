@@ -4,7 +4,7 @@ import {
   ScrollView, Alert, Linking, Share,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { supabase } from "../lib/supabase";
+import { supabase, deleteAllUserData } from "../lib/supabase";
 
 const APP_VERSION = "1.0.0";
 const CONTACT_EMAIL = "richamediahub@gmail.com";
@@ -82,13 +82,45 @@ export default function SettingsScreen({ navigation }) {
       "Are you sure you want to sign out?",
       [
         { text: "Cancel", style: "cancel" },
-        {
-          text: "Sign out",
-          style: "destructive",
-          onPress: () => supabase.auth.signOut(),
-        },
+        { text: "Sign out", style: "destructive", onPress: () => supabase.auth.signOut() },
       ]
     );
+  }
+
+  function handleDeleteAccount() {
+    Alert.alert(
+      "Delete account",
+      "This will permanently delete all your interview history and log you out. This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete my account", style: "destructive", onPress: confirmDeleteAccount },
+      ]
+    );
+  }
+
+  async function confirmDeleteAccount() {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      // Delete all interview data (client-side, RLS-protected)
+      await deleteAllUserData(session.user.id);
+
+      // Delete auth user via server endpoint
+      try {
+        await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/delete-account`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+      } catch (_) {
+        // Server deletion failed — data is cleared, proceed with sign-out
+      }
+
+      // Sign out — triggers auth state change → app navigates to login
+      await supabase.auth.signOut();
+    } catch (err) {
+      Alert.alert("Error", "Something went wrong. Please try again.");
+    }
   }
 
   return (
@@ -139,6 +171,13 @@ export default function SettingsScreen({ navigation }) {
         {/* Support */}
         <Section title="SUPPORT">
           <Row
+            icon="❓"
+            label="FAQ"
+            subtitle="Frequently asked questions"
+            onPress={() => navigation.navigate("FAQ")}
+          />
+          <Divider />
+          <Row
             icon="💬"
             label="Share on WhatsApp"
             subtitle="Invite friends to try the app"
@@ -159,6 +198,15 @@ export default function SettingsScreen({ navigation }) {
             icon="🚪"
             label="Sign Out"
             onPress={handleSignOut}
+            destructive
+            showArrow={false}
+          />
+          <Divider />
+          <Row
+            icon="🗑️"
+            label="Delete Account"
+            subtitle="Permanently delete all your data"
+            onPress={handleDeleteAccount}
             destructive
             showArrow={false}
           />
