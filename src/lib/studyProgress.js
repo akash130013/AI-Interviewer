@@ -1,10 +1,20 @@
 import * as SecureStore from "expo-secure-store";
+import { supabase } from "./supabase";
 
-const KEY = "study_progress";
+async function getKey() {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    const uid = session?.user?.id;
+    return uid ? `study_progress_${uid}` : "study_progress";
+  } catch {
+    return "study_progress";
+  }
+}
 
 async function loadAll() {
   try {
-    const raw = await SecureStore.getItemAsync(KEY);
+    const key = await getKey();
+    const raw = await SecureStore.getItemAsync(key);
     return raw ? JSON.parse(raw) : {};
   } catch {
     return {};
@@ -12,7 +22,8 @@ async function loadAll() {
 }
 
 async function saveAll(data) {
-  await SecureStore.setItemAsync(KEY, JSON.stringify(data));
+  const key = await getKey();
+  await SecureStore.setItemAsync(key, JSON.stringify(data));
 }
 
 export async function getStudiedIds(topicId) {
