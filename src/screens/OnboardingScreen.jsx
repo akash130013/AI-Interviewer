@@ -6,6 +6,8 @@ import {
 import { useFocusEffect } from "@react-navigation/native";
 import * as SecureStore from "expo-secure-store";
 import { getStreakData } from "../lib/streak";
+import { getProfile } from "../lib/profile";
+import { supabase } from "../lib/supabase";
 
 // ─── Preset role list (shown in dropdown) ────────────────────────────────────
 
@@ -129,6 +131,18 @@ const ROLE_SKILL_MAP = [
   },
 ];
 
+// Profile job_category → default role string for the onboarding form
+const PROFILE_ROLE_MAP = {
+  frontend: "Frontend Developer",
+  backend:  "Backend Developer",
+  fullstack: "Full Stack Developer",
+  mobile:   "Mobile Developer",
+  devops:   "DevOps Engineer",
+  data:     "Data Scientist",
+  designer: "UI/UX Designer",
+  pm:       "Product Manager",
+};
+
 function getSkillsForRole(role) {
   if (!role || role.trim().length < 2) return [];
   const lower = role.toLowerCase();
@@ -200,13 +214,35 @@ export default function OnboardingScreen({ navigation }) {
   // Reload saved form whenever this screen comes into focus
   useFocusEffect(
     useCallback(() => {
-      loadFormFromStore().then((saved) => {
+      async function hydrate() {
+        const [saved, { count }] = await Promise.all([
+          loadFormFromStore(),
+          getStreakData(),
+        ]);
+        setStreak(count);
         if (saved) {
           setForm(saved);
           setAvailableSkills(getSkillsForRole(saved.role));
+          return;
         }
-      });
-      getStreakData().then(({ count }) => setStreak(count));
+        // First visit: pre-fill role from profile if set
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user?.id) {
+            const profile = await getProfile(session.user.id);
+            if (profile?.job_category) {
+              const role = PROFILE_ROLE_MAP[profile.job_category] || "";
+              if (role) {
+                const skills = getSkillsForRole(role).slice(0, 5);
+                const next = { ...form, role, skills };
+                setForm(next);
+                setAvailableSkills(getSkillsForRole(role));
+              }
+            }
+          }
+        } catch (_) {}
+      }
+      hydrate();
     }, [])
   );
 

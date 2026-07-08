@@ -13,9 +13,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "./src/lib/supabase";
 import { scheduleDailyNotifications } from "./src/lib/notifications";
 import { getStreakData } from "./src/lib/streak";
+import { getProfile } from "./src/lib/profile";
 
 import LoginScreen from "./src/screens/LoginScreen";
 import SignupScreen from "./src/screens/SignupScreen";
+import ProfileSetupScreen from "./src/screens/ProfileSetupScreen";
 import DashboardScreen from "./src/screens/DashboardScreen";
 import OnboardingScreen from "./src/screens/OnboardingScreen";
 import InterviewScreen from "./src/screens/InterviewScreen";
@@ -98,10 +100,7 @@ function AppNavigator() {
             paddingBottom: 10,
             paddingTop: 8,
           },
-          tabBarLabelStyle: {
-            fontSize: 10,
-            fontWeight: "600",
-          },
+          tabBarLabelStyle: { fontSize: 10, fontWeight: "600" },
           tabBarIcon: ({ focused, color }) => {
             const icons = {
               Dashboard: focused ? "grid" : "grid-outline",
@@ -130,20 +129,33 @@ export default function App() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [bypassed, setBypassed] = useState(false);
+  const [profileDone, setProfileDone] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    async function init() {
+      const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
-      setLoading(false);
-      if (session) {
-        getStreakData().then(({ count }) => scheduleDailyNotifications(count));
+      if (session?.user?.id) {
+        const [profile] = await Promise.all([
+          getProfile(session.user.id),
+          getStreakData().then(({ count }) => scheduleDailyNotifications(count)),
+        ]);
+        setProfileDone(profile?.setup_done === true);
+      } else {
+        setProfileDone(true); // no session → bypass or not logged in, skip setup
       }
-    });
+      setLoading(false);
+    }
+    init();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
-      if (session) {
+      if (session?.user?.id) {
+        const profile = await getProfile(session.user.id);
+        setProfileDone(profile?.setup_done === true);
         getStreakData().then(({ count }) => scheduleDailyNotifications(count));
+      } else {
+        setProfileDone(true);
       }
     });
 
@@ -152,12 +164,21 @@ export default function App() {
 
   if (loading) return null;
 
+  const isAuthed = session || bypassed;
+
   return (
     <SafeAreaProvider>
-      {(session || bypassed)
-        ? <AppNavigator />
-        : <AuthNavigator onBypass={() => setBypassed(true)} />
-      }
+      {!isAuthed ? (
+        <AuthNavigator onBypass={() => { setBypassed(true); setProfileDone(true); }} />
+      ) : !profileDone ? (
+        // Full-screen setup — no NavigationContainer needed, 2-step component only
+        <ProfileSetupScreen
+          userId={session?.user?.id}
+          onDone={() => setProfileDone(true)}
+        />
+      ) : (
+        <AppNavigator />
+      )}
     </SafeAreaProvider>
   );
 }
