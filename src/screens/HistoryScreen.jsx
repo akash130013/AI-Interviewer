@@ -102,7 +102,7 @@ export default function HistoryScreen({ navigation }) {
           </Text>
           <TouchableOpacity
             style={styles.emptyBtn}
-            onPress={() => navigation.navigate("Onboarding")}
+            onPress={() => navigation.navigate("Practice")}
             activeOpacity={0.8}
           >
             <Text style={styles.emptyBtnText}>Start an interview →</Text>
