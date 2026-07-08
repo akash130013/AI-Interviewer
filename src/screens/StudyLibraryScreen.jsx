@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, ActivityIndicator,
+  StyleSheet, ActivityIndicator, RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
@@ -13,12 +13,27 @@ export default function StudyLibraryScreen({ navigation }) {
   const [progress, setProgress] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
       load();
     }, [])
   );
+
+  async function onRefresh() {
+    setRefreshing(true);
+    setError(null);
+    try {
+      const [cats, prog] = await Promise.all([getStudyCategories(), getAllProgress()]);
+      setCategories(cats);
+      setProgress(prog);
+    } catch (e) {
+      setError(e?.message || "Could not load study content.");
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   async function load() {
     setLoading(true);
@@ -104,7 +119,12 @@ export default function StudyLibraryScreen({ navigation }) {
           </TouchableOpacity>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.list}>
+        <ScrollView
+          contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3b82f6" colors={["#3b82f6"]} />
+          }
+        >
           <Text style={styles.subtitle}>
             Read and learn before your interview. Tap a topic to start.
           </Text>

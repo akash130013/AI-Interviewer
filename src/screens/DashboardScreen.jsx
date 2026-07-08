@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, Platform, StatusBar,
+  StyleSheet, Platform, StatusBar, RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
@@ -289,6 +289,7 @@ export default function DashboardScreen({ navigation }) {
   const [recentSessions, setRecentSessions] = useState([]);
   const [challengeRevealed, setChallengeRevealed] = useState(false);
   const [challengeMarked, setChallengeMarked] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   const challenge = useMemo(() => getDailyChallenge(jobCategory), [jobCategory]);
 
@@ -305,6 +306,12 @@ export default function DashboardScreen({ navigation }) {
       loadData();
     }, [])
   );
+
+  async function onRefresh() {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
+  }
 
   async function loadData() {
     try {
@@ -366,7 +373,13 @@ export default function DashboardScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <StatusBar barStyle="dark-content" backgroundColor="#f5f5f5" />
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3b82f6" colors={["#3b82f6"]} />
+        }
+      >
 
         {/* ── Top bar ── */}
         <View style={styles.topbar}>

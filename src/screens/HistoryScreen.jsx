@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import {
-  View, Text, FlatList, TouchableOpacity,
-  StyleSheet, ActivityIndicator,
+  View, Text, FlatList, ScrollView, TouchableOpacity,
+  StyleSheet, ActivityIndicator, RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
@@ -33,6 +33,7 @@ function scoreColor(score) {
 export default function HistoryScreen({ navigation }) {
   const [interviews, setInterviews] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -40,14 +41,20 @@ export default function HistoryScreen({ navigation }) {
     }, [])
   );
 
-  async function loadHistory() {
-    setLoading(true);
+  async function loadHistory(showLoader = true) {
+    if (showLoader) setLoading(true);
     const { data: { session } } = await supabase.auth.getSession();
     if (session) {
       const data = await getPastInterviews(session.user.id);
       setInterviews(data);
     }
     setLoading(false);
+  }
+
+  async function onRefresh() {
+    setRefreshing(true);
+    await loadHistory(false);
+    setRefreshing(false);
   }
 
   // Summary stats
@@ -82,7 +89,12 @@ export default function HistoryScreen({ navigation }) {
       {loading ? (
         <ActivityIndicator style={styles.loader} size="large" color="#111" />
       ) : interviews.length === 0 ? (
-        <View style={styles.empty}>
+        <ScrollView
+          contentContainerStyle={styles.empty}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3b82f6" colors={["#3b82f6"]} />
+          }
+        >
           <Text style={styles.emptyIcon}>📋</Text>
           <Text style={styles.emptyTitle}>No interviews yet</Text>
           <Text style={styles.emptySub}>
@@ -95,13 +107,16 @@ export default function HistoryScreen({ navigation }) {
           >
             <Text style={styles.emptyBtnText}>Start an interview →</Text>
           </TouchableOpacity>
-        </View>
+        </ScrollView>
       ) : (
         <FlatList
           data={interviews}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3b82f6" colors={["#3b82f6"]} />
+          }
           ListHeaderComponent={
             <>
               {/* Stats summary */}
@@ -206,7 +221,7 @@ const styles = StyleSheet.create({
   loader: { flex: 1 },
 
   // Empty state
-  empty: { flex: 1, alignItems: "center", justifyContent: "center", padding: 40 },
+  empty: { flexGrow: 1, alignItems: "center", justifyContent: "center", padding: 40 },
   emptyIcon: { fontSize: 52, marginBottom: 16 },
   emptyTitle: { fontSize: 18, fontWeight: "700", color: "#111", marginBottom: 8 },
   emptySub: { fontSize: 14, color: "#888", textAlign: "center", lineHeight: 20, marginBottom: 28 },
