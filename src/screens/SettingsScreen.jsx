@@ -166,7 +166,7 @@ export default function SettingsScreen({ navigation }) {
             icon="📚"
             label="Study Hub"
             subtitle="170+ Q&As across 7 categories"
-            onPress={() => navigation.navigate("StudyLibrary")}
+            onPress={() => navigation.navigate("Study")}
           />
         </Section>
 

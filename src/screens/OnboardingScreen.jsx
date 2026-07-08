@@ -346,7 +346,7 @@ export default function OnboardingScreen({ navigation }) {
 
         <TouchableOpacity
           style={styles.studyBtn}
-          onPress={() => navigation.navigate("StudyLibrary")}
+          onPress={() => navigation.navigate("Study")}
         >
           <Text style={styles.studyBtnIcon}>📚</Text>
           <View>
