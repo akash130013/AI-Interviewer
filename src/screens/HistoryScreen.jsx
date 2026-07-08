@@ -70,9 +70,11 @@ export default function HistoryScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} activeOpacity={0.7}>
-          <Text style={styles.back}>← Back</Text>
-        </TouchableOpacity>
+        {navigation.canGoBack() ? (
+          <TouchableOpacity onPress={() => navigation.goBack()} activeOpacity={0.7}>
+            <Text style={styles.back}>← Back</Text>
+          </TouchableOpacity>
+        ) : <View style={{ width: 50 }} />}
         <Text style={styles.headerTitle}>Interview History</Text>
         <View style={{ width: 50 }} />
       </View>

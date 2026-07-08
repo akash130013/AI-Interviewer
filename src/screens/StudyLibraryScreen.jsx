@@ -69,13 +69,17 @@ export default function StudyLibraryScreen({ navigation }) {
     }
   }
 
+  const backBtn = navigation.canGoBack() ? (
+    <TouchableOpacity onPress={() => navigation.goBack()}>
+      <Text style={styles.back}>← Back</Text>
+    </TouchableOpacity>
+  ) : <View style={{ width: 50 }} />;
+
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.back}>← Back</Text>
-          </TouchableOpacity>
+          {backBtn}
           <Text style={styles.headerTitle}>Study Hub</Text>
           <View style={{ width: 50 }} />
         </View>
@@ -87,9 +91,7 @@ export default function StudyLibraryScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.back}>← Back</Text>
-        </TouchableOpacity>
+        {backBtn}
         <Text style={styles.headerTitle}>Study Hub</Text>
         <View style={{ width: 50 }} />
       </View>
