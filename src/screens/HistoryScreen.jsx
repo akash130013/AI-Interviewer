@@ -159,7 +159,7 @@ export default function HistoryScreen({ navigation }) {
             return (
               <TouchableOpacity
                 style={styles.card}
-                onPress={() => navigation.navigate("Report", { report: item.report })}
+                onPress={() => navigation.navigate("Practice", { screen: "Report", params: { report: item.report } })}
                 activeOpacity={0.7}
               >
                 {/* Top row: role + score */}
