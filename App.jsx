@@ -133,28 +133,39 @@ export default function App() {
 
   useEffect(() => {
     async function init() {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      if (session?.user?.id) {
-        const [profile] = await Promise.all([
-          getProfile(session.user.id),
-          getStreakData().then(({ count }) => scheduleDailyNotifications(count)),
-        ]);
-        setProfileDone(profile?.setup_done === true);
-      } else {
-        setProfileDone(true); // no session → bypass or not logged in, skip setup
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setSession(session);
+        if (session?.user?.id) {
+          const [profile] = await Promise.all([
+            getProfile(session.user.id),
+            getStreakData().then(({ count }) => scheduleDailyNotifications(count)).catch(() => {}),
+          ]);
+          setProfileDone(profile?.setup_done === true);
+        } else {
+          setProfileDone(true);
+        }
+      } catch (e) {
+        console.error("App init error:", e?.message);
+        setProfileDone(true); // let the app open even if init fails
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
     init();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session);
-      if (session?.user?.id) {
-        const profile = await getProfile(session.user.id);
-        setProfileDone(profile?.setup_done === true);
-        getStreakData().then(({ count }) => scheduleDailyNotifications(count));
-      } else {
+      try {
+        setSession(session);
+        if (session?.user?.id) {
+          const profile = await getProfile(session.user.id);
+          setProfileDone(profile?.setup_done === true);
+          getStreakData().then(({ count }) => scheduleDailyNotifications(count)).catch(() => {});
+        } else {
+          setProfileDone(true);
+        }
+      } catch (e) {
+        console.error("Auth state change error:", e?.message);
         setProfileDone(true);
       }
     });
