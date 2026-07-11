@@ -52,7 +52,11 @@
           "project": "react-native",
           "organization": "sdg-software-india-pvt-ltd"
         }
-      ]
+      ],
+      "@sentry/react-native",
+      "expo-secure-store",
+      "expo-web-browser",
+      "expo-font"
     ],
     "extra": {
       "eas": {
