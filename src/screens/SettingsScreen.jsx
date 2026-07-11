@@ -7,7 +7,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase, deleteAllUserData } from "../lib/supabase";
 
 const APP_VERSION = "1.0.0";
-const CONTACT_EMAIL = "richmediahub@gmail.com";
+const CONTACT_EMAIL = "richamediahub@gmail.com";
 const SHARE_MESSAGE =
   "⛵ I've been using *Interview Boat* to practice job interviews with AI!\n\n" +
   "It asks real interview questions, scores your answers, and gives detailed feedback — like having a personal interview coach.\n\n" +
