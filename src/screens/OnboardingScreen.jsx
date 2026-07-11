@@ -157,7 +157,7 @@ function getSkillsForRole(role) {
 // ─── Persistence ─────────────────────────────────────────────────────────────
 
 // v2 key — old stored format (pre-skills) gets ignored cleanly
-const FORM_KEY = "@crackit_form_v2";
+const FORM_KEY = "@interviewboat_form_v2";
 
 async function saveFormToStore(form) {
   try {

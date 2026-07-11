@@ -14,12 +14,12 @@ const FAQS = [
     category: "General",
     items: [
       {
-        q: "What is CrackIt?",
-        a: "CrackIt is an AI-powered mock interview coach. You practice job interviews by speaking with an AI interviewer named Alex who asks adaptive questions, scores your answers, and gives you a detailed report — all on your phone.",
+        q: "What is Interview Boat?",
+        a: "Interview Boat is an AI-powered mock interview coach. You practice job interviews by speaking with an AI interviewer named Alex who asks adaptive questions, scores your answers, and gives you a detailed report — all on your phone.",
       },
       {
-        q: "Is CrackIt free to use?",
-        a: "CrackIt offers a free tier with a limited number of practice interviews per month. A paid subscription unlocks unlimited interviews and all premium features.",
+        q: "Is Interview Boat free to use?",
+        a: "Interview Boat offers a free tier with a limited number of practice interviews per month. A paid subscription unlocks unlimited interviews and all premium features.",
       },
       {
         q: "What interview types are available?",
@@ -124,7 +124,7 @@ export default function FAQScreen({ navigation }) {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={styles.intro}>Frequently asked questions about CrackIt.</Text>
+        <Text style={styles.intro}>Frequently asked questions about Interview Boat.</Text>
 
         {FAQS.map((section) => (
           <View key={section.category} style={styles.section}>

@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "CrackIt",
-    "slug": "crackit",
+    "name": "Interview Boat",
+    "slug": "interview-boat",
     "version": "1.0.0",
     "sdkVersion": "54.0.0",
     "orientation": "portrait",
@@ -11,11 +11,11 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#1e293b"
+      "backgroundColor": "#0c4a6e"
     },
     "platforms": ["android"],
     "android": {
-      "package": "com.crackit.app",
+      "package": "com.interviewboat.app",
       "versionCode": 1,
       "permissions": [
         "RECORD_AUDIO",
@@ -28,7 +28,7 @@
       [
         "expo-av",
         {
-          "microphonePermission": "Allow CrackIt to access your microphone for voice interviews."
+          "microphonePermission": "Allow Interview Boat to access your microphone for voice interviews."
         }
       ]
     ],
