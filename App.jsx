@@ -6,7 +6,7 @@ const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN || "";
 Sentry.init({
   dsn: SENTRY_DSN,
   enabled: !!SENTRY_DSN,
-  enableNativeCrashHandling: false, // no Expo plugin needed — JS-level capture only
+  enableNativeCrashHandling: true,
   tracesSampleRate: 0.1,
   debug: false,
 });
@@ -220,7 +220,7 @@ function AppNavigator() {
 
 // ── Root ──────────────────────────────────────────────────────────────────────
 
-export default function App() {
+export default Sentry.wrap(function App() {
   const [session,     setSession]     = useState(null);
   const [loading,     setLoading]     = useState(true);
   const [bypassed,    setBypassed]    = useState(false);
@@ -301,4 +301,4 @@ export default function App() {
       </SafeAreaProvider>
     </ErrorBoundary>
   );
-}
+});

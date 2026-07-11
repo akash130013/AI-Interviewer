@@ -13,7 +13,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#0c4a6e"
     },
-    "platforms": ["android"],
+    "platforms": [
+      "android"
+    ],
     "android": {
       "package": "com.interviewboat.app",
       "versionCode": 1,
@@ -41,6 +43,14 @@
         {
           "icon": "./assets/icon.png",
           "color": "#0c4a6e"
+        }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "react-native",
+          "organization": "sdg-software-india-pvt-ltd"
         }
       ]
     ],
