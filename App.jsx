@@ -2,7 +2,7 @@ import "react-native-gesture-handler";
 import { useState, useEffect, Component } from "react";
 import {
   View, Text, ScrollView, TouchableOpacity,
-  LogBox, ErrorUtils, StyleSheet, Platform,
+  LogBox, StyleSheet, Platform,
 } from "react-native";
 
 LogBox.ignoreLogs(["expo-notifications: Android Push notifications"]);
@@ -41,16 +41,18 @@ const Tab   = createBottomTabNavigator();
 
 let _globalErrorSetter = null; // set by ErrorBoundary once mounted
 
-const _prevHandler = ErrorUtils.getGlobalHandler();
-ErrorUtils.setGlobalHandler((error, isFatal) => {
-  console.error("[GlobalError] isFatal=" + isFatal, error?.message, error?.stack);
-  if (_globalErrorSetter) {
-    _globalErrorSetter(
-      (error?.message || "Unknown error") + "\n\n" + (error?.stack || "")
-    );
-  }
-  // Don't call prevHandler — that would dismiss the screen immediately
-});
+// ErrorUtils is a React Native global (not a react-native export) — use optional chaining
+try {
+  const _prevHandler = global.ErrorUtils?.getGlobalHandler?.();
+  global.ErrorUtils?.setGlobalHandler?.((error, isFatal) => {
+    console.error("[GlobalError] isFatal=" + isFatal, error?.message, error?.stack);
+    if (_globalErrorSetter) {
+      _globalErrorSetter(
+        (error?.message || "Unknown error") + "\n\n" + (error?.stack || "")
+      );
+    }
+  });
+} catch (_) {}
 
 // ── Error Boundary ────────────────────────────────────────────────────────────
 
