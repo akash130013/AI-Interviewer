@@ -12,7 +12,8 @@
         "EXPO_PUBLIC_SUPABASE_URL": "https://rolidiycsmwexuolyter.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_Rlz8AZZrAekOi0IcgUthTA_Hn_TVyoc",
         "EXPO_PUBLIC_DEEPGRAM_KEY": "efd02fd85a362ec31bdabf4cd2d3faa907cc58f5",
-        "EXPO_PUBLIC_API_URL": "https://ai-interviewer-backend-lac.vercel.app"
+        "EXPO_PUBLIC_API_URL": "https://ai-interviewer-backend-lac.vercel.app",
+        "EXPO_PUBLIC_SENTRY_DSN": ""
       }
     },
     "production": {
@@ -23,7 +24,8 @@
         "EXPO_PUBLIC_SUPABASE_URL": "https://rolidiycsmwexuolyter.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_Rlz8AZZrAekOi0IcgUthTA_Hn_TVyoc",
         "EXPO_PUBLIC_DEEPGRAM_KEY": "efd02fd85a362ec31bdabf4cd2d3faa907cc58f5",
-        "EXPO_PUBLIC_API_URL": "https://ai-interviewer-backend-lac.vercel.app"
+        "EXPO_PUBLIC_API_URL": "https://ai-interviewer-backend-lac.vercel.app",
+        "EXPO_PUBLIC_SENTRY_DSN": ""
       }
     }
   }

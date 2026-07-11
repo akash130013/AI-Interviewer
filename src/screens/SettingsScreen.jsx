@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  ScrollView, Alert, Linking, Share,
+  ScrollView, Alert, Linking, Share, Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase, deleteAllUserData } from "../lib/supabase";
+import { getLogs, clearLogs } from "../lib/crashLog";
 
 const APP_VERSION = "1.0.0";
 const CONTACT_EMAIL = "richamediahub@gmail.com";
@@ -49,13 +50,35 @@ function Divider() {
 }
 
 export default function SettingsScreen({ navigation }) {
-  const [email, setEmail] = useState("");
+  const [email,       setEmail]       = useState("");
+  const [debugMode,   setDebugMode]   = useState(false);
+  const [crashLogs,   setCrashLogs]   = useState([]);
+  const versionTaps   = useRef(0);
+  const versionTimer  = useRef(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setEmail(session?.user?.email ?? "");
     });
   }, []);
+
+  function handleVersionTap() {
+    versionTaps.current += 1;
+    clearTimeout(versionTimer.current);
+    versionTimer.current = setTimeout(() => { versionTaps.current = 0; }, 2000);
+    if (versionTaps.current >= 5) {
+      versionTaps.current = 0;
+      getLogs().then((logs) => {
+        setCrashLogs(logs);
+        setDebugMode(true);
+      });
+    }
+  }
+
+  function handleClearLogs() {
+    clearLogs().then(() => setCrashLogs([]));
+    Alert.alert("Cleared", "All debug logs have been deleted.");
+  }
 
   const initial = email ? email[0].toUpperCase() : "?";
 
@@ -205,8 +228,39 @@ export default function SettingsScreen({ navigation }) {
           />
         </Section>
 
-        {/* Version */}
-        <Text style={styles.version}>Interview Boat v{APP_VERSION}</Text>
+        {/* Debug log viewer — unlocked by tapping version 5× */}
+        {debugMode && (
+          <Section title="DEBUG LOGS">
+            <View style={{ padding: 12 }}>
+              {crashLogs.length === 0 ? (
+                <Text style={styles.rowSubtitle}>No errors recorded.</Text>
+              ) : (
+                crashLogs.map((entry, i) => (
+                  <View key={i} style={styles.logEntry}>
+                    <Text style={styles.logMeta}>[{entry.tag}] {entry.ts}</Text>
+                    <Text style={styles.logMsg} selectable>{entry.msg}</Text>
+                    {!!entry.stack && (
+                      <Text style={styles.logStack} selectable>{entry.stack}</Text>
+                    )}
+                  </View>
+                ))
+              )}
+            </View>
+            <Divider />
+            <Row
+              icon="🗑"
+              label="Clear all logs"
+              onPress={handleClearLogs}
+              destructive
+              showArrow={false}
+            />
+          </Section>
+        )}
+
+        {/* Version — tap 5× to unlock debug logs */}
+        <TouchableOpacity onPress={handleVersionTap} activeOpacity={1}>
+          <Text style={styles.version}>Interview Boat v{APP_VERSION}</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -263,5 +317,13 @@ const styles = StyleSheet.create({
 
   divider: { height: 1, backgroundColor: "#f5f5f5", marginLeft: 56 },
 
-  version: { fontSize: 12, color: "#bbb", textAlign: "center", marginTop: 8 },
+  version: { fontSize: 12, color: "#bbb", textAlign: "center", marginTop: 8, paddingVertical: 12 },
+
+  logEntry: { marginBottom: 12, borderBottomWidth: 1, borderBottomColor: "#f0f0f0", paddingBottom: 10 },
+  logMeta:  { fontSize: 10, color: "#999", marginBottom: 2 },
+  logMsg:   { fontSize: 12, color: "#dc2626", fontWeight: "600", marginBottom: 2 },
+  logStack: {
+    fontSize: 10, color: "#555", lineHeight: 16,
+    fontFamily: Platform.select({ ios: "Menlo", android: "monospace" }),
+  },
 });

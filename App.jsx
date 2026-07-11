@@ -1,3 +1,16 @@
+// Sentry must be the very first import so it hooks into the JS error handler
+// before any other module code runs.
+import * as Sentry from "@sentry/react-native";
+
+const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN || "";
+Sentry.init({
+  dsn: SENTRY_DSN,
+  enabled: !!SENTRY_DSN,
+  enableNativeCrashHandling: false, // no Expo plugin needed — JS-level capture only
+  tracesSampleRate: 0.1,
+  debug: false,
+});
+
 import "react-native-gesture-handler";
 import { useState, useEffect, Component } from "react";
 import {
@@ -17,6 +30,7 @@ import { supabase } from "./src/lib/supabase";
 import { scheduleDailyNotifications } from "./src/lib/notifications";
 import { getStreakData } from "./src/lib/streak";
 import { getProfile } from "./src/lib/profile";
+import { logError } from "./src/lib/crashLog";
 
 import LoginScreen from "./src/screens/LoginScreen";
 import SignupScreen from "./src/screens/SignupScreen";
@@ -36,21 +50,17 @@ const Stack = createStackNavigator();
 const Tab   = createBottomTabNavigator();
 
 // ── Global JS error capture ───────────────────────────────────────────────────
-// Intercepts fatal JS errors before React Native's red screen / crash,
-// stores the message so ErrorBoundary can display it on-device.
 
-let _globalErrorSetter = null; // set by ErrorBoundary once mounted
+let _globalErrorSetter = null;
 
-// ErrorUtils is a React Native global (not a react-native export) — use optional chaining
 try {
-  const _prevHandler = global.ErrorUtils?.getGlobalHandler?.();
   global.ErrorUtils?.setGlobalHandler?.((error, isFatal) => {
-    console.error("[GlobalError] isFatal=" + isFatal, error?.message, error?.stack);
-    if (_globalErrorSetter) {
-      _globalErrorSetter(
-        (error?.message || "Unknown error") + "\n\n" + (error?.stack || "")
-      );
-    }
+    const msg   = error?.message || "Unknown error";
+    const stack = error?.stack   || "";
+    console.error("[GlobalError] isFatal=" + isFatal, msg, stack);
+    logError("GLOBAL", msg, stack);
+    if (SENTRY_DSN) Sentry.captureException(error);
+    if (_globalErrorSetter) _globalErrorSetter(msg + "\n\n" + stack);
   });
 } catch (_) {}
 
@@ -60,7 +70,6 @@ class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
     this.state = { error: null, globalError: null };
-    // Let the global handler send errors here
     _globalErrorSetter = (msg) => this.setState({ globalError: msg });
   }
 
@@ -69,7 +78,10 @@ class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, info) {
-    console.error("[ErrorBoundary] caught:", error?.message, info?.componentStack);
+    const msg = error?.message || "Unknown";
+    logError("BOUNDARY", msg, (error?.stack || "") + "\n" + (info?.componentStack || ""));
+    if (SENTRY_DSN) Sentry.captureException(error);
+    console.error("[ErrorBoundary] caught:", msg, info?.componentStack);
   }
 
   render() {
@@ -86,7 +98,7 @@ function CrashScreen({ message, onDismiss }) {
     <SafeAreaView style={cs.container} edges={["top", "bottom"]}>
       <View style={cs.header}>
         <Text style={cs.title}>App crashed</Text>
-        <Text style={cs.sub}>Screenshot this screen and share it for debugging.</Text>
+        <Text style={cs.sub}>Screenshot this and share for debugging. Tap "Try again" to reload.</Text>
       </View>
       <ScrollView style={cs.scroll} contentContainerStyle={{ padding: 16 }}>
         <Text style={cs.msg} selectable>{message}</Text>
@@ -231,7 +243,10 @@ export default function App() {
           setProfileDone(true);
         }
       } catch (e) {
-        console.error("App init error:", e?.message, e?.stack);
+        const msg = e?.message || "init failed";
+        console.error("App init error:", msg, e?.stack);
+        logError("INIT", msg, e?.stack);
+        if (SENTRY_DSN) Sentry.captureException(e);
         setProfileDone(true);
       } finally {
         setLoading(false);
@@ -253,7 +268,9 @@ export default function App() {
             setProfileDone(true);
           }
         } catch (e) {
-          console.error("Auth state change error:", e?.message);
+          const msg = e?.message || "auth state change failed";
+          console.error("Auth state change error:", msg);
+          logError("AUTH", msg, e?.stack);
           setProfileDone(true);
         }
       }

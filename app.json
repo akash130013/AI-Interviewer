@@ -25,7 +25,8 @@
         "RECORD_AUDIO",
         "INTERNET",
         "VIBRATE",
-        "RECEIVE_BOOT_COMPLETED"
+        "RECEIVE_BOOT_COMPLETED",
+        "POST_NOTIFICATIONS"
       ]
     },
     "plugins": [
@@ -33,6 +34,13 @@
         "expo-av",
         {
           "microphonePermission": "Allow Interview Boat to access your microphone for voice interviews."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#0c4a6e"
         }
       ]
     ],
