@@ -1,6 +1,7 @@
 {
   "rewrites": [
-    { "source": "/privacy", "destination": "/privacy.html" },
-    { "source": "/reset-password", "destination": "/reset-password.html" }
+    { "source": "/privacy",       "destination": "/privacy.html" },
+    { "source": "/reset-password","destination": "/reset-password.html" },
+    { "source": "/confirm-email", "destination": "/confirm-email.html" }
   ]
 }
