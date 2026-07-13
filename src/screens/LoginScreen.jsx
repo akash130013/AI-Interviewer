@@ -12,6 +12,27 @@ export default function LoginScreen({ navigation, onBypass }) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [resetSent, setResetSent] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+
+  async function handleForgotPassword() {
+    if (!email.trim()) {
+      setError("Enter your email above first, then tap Forgot Password.");
+      return;
+    }
+    setResetLoading(true);
+    setError(null);
+    const { error: err } = await supabase.auth.resetPasswordForEmail(
+      email.trim().toLowerCase(),
+      { redirectTo: "https://ai-interviewer-backend-lac.vercel.app/reset-password" }
+    );
+    setResetLoading(false);
+    if (err) {
+      setError(err.message);
+    } else {
+      setResetSent(true);
+    }
+  }
 
   async function handleLogin() {
     setError(null);
@@ -90,6 +111,25 @@ export default function LoginScreen({ navigation, onBypass }) {
             </View>
 
             <TouchableOpacity
+              style={styles.forgotBtn}
+              onPress={handleForgotPassword}
+              disabled={resetLoading}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.forgotText}>
+                {resetLoading ? "Sending…" : "Forgot Password?"}
+              </Text>
+            </TouchableOpacity>
+
+            {resetSent && (
+              <View style={styles.resetSuccess}>
+                <Text style={styles.resetSuccessText}>
+                  ✅ Reset link sent! Check your email inbox.
+                </Text>
+              </View>
+            )}
+
+            <TouchableOpacity
               style={[styles.primaryBtn, loading && styles.btnDisabled]}
               onPress={handleLogin}
               disabled={loading}
@@ -152,6 +192,15 @@ const styles = StyleSheet.create({
     padding: 12, marginBottom: 8,
     fontSize: 13, color: "#dc2626", lineHeight: 18,
   },
+
+  forgotBtn: { alignSelf: "flex-end", marginTop: 8, marginBottom: 4, padding: 4 },
+  forgotText: { fontSize: 13, color: "#3b82f6", fontWeight: "600" },
+
+  resetSuccess: {
+    backgroundColor: "#f0fdf4", borderRadius: 10,
+    padding: 12, marginTop: 8,
+  },
+  resetSuccessText: { fontSize: 13, color: "#16a34a", lineHeight: 18 },
 
   primaryBtn: {
     backgroundColor: "#111", borderRadius: 14,

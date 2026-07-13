@@ -6,8 +6,36 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import RadarChart from "../components/RadarChart";
 
+// The report comes from an LLM — fields can occasionally be missing or
+// mistyped. Normalize everything so a partial report never crashes the screen.
+function normalizeReport(raw) {
+  const r = raw && typeof raw === "object" ? raw : {};
+  const num = (v, fallback) => (typeof v === "number" && isFinite(v) ? v : fallback);
+  const strArr = (v) => (Array.isArray(v) ? v.filter((s) => typeof s === "string") : []);
+  return {
+    ...r,
+    overall_score: Math.max(0, Math.min(100, num(r.overall_score, 0))),
+    summary: typeof r.summary === "string" ? r.summary : "",
+    interview_readiness_percent: Math.max(0, Math.min(100, num(r.interview_readiness_percent, 0))),
+    top_3_strengths: strArr(r.top_3_strengths),
+    top_3_improvements: strArr(r.top_3_improvements),
+    recommended_next_focus: typeof r.recommended_next_focus === "string" ? r.recommended_next_focus : "",
+    questions: (Array.isArray(r.questions) ? r.questions : [])
+      .filter((q) => q && typeof q === "object")
+      .map((q) => ({
+        ...q,
+        question: typeof q.question === "string" ? q.question : "",
+        answer_summary: typeof q.answer_summary === "string" ? q.answer_summary : "",
+        sample_better_answer: typeof q.sample_better_answer === "string" ? q.sample_better_answer : "",
+        score: Math.max(1, Math.min(10, num(q.score, 5))),
+      })),
+  };
+}
+
 export default function ReportScreen({ route, navigation }) {
-  const { report, streakCount } = route.params;
+  const { streakCount } = route.params;
+  const saved = route.params.saved !== false; // default true for older callers
+  const report = normalizeReport(route.params.report);
   const [displayScore, setDisplayScore] = useState(0);
   const animatedScore = useRef(new Animated.Value(0)).current;
   const celebrationOpacity = useRef(new Animated.Value(0)).current;
@@ -72,6 +100,14 @@ export default function ReportScreen({ route, navigation }) {
       )}
 
       <ScrollView contentContainerStyle={styles.scroll}>
+        {!saved && (
+          <View style={styles.notSavedBanner}>
+            <Text style={styles.notSavedText}>
+              ⚠️ This report couldn't be saved to your history. Screenshot it to keep a copy.
+            </Text>
+          </View>
+        )}
+
         {/* Score */}
         <View style={styles.scoreBlock}>
           <Text style={[styles.scoreNum, { color: scoreColor(report.overall_score) }]}>
@@ -121,7 +157,7 @@ export default function ReportScreen({ route, navigation }) {
 
         {/* Per-question */}
         <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Question breakdown</Text>
-        {report.questions.map((q, i) => (
+        {qs.map((q, i) => (
           <View key={i} style={styles.qCard}>
             <View style={styles.qHeader}>
               <Text style={styles.qNum}>Q{i + 1}</Text>
@@ -161,6 +197,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#16a34a", borderRadius: 14, padding: 14, alignItems: "center",
   },
   celebrationText: { color: "#fff", fontWeight: "700", fontSize: 16 },
+  notSavedBanner: {
+    backgroundColor: "#fef3c7", borderRadius: 12,
+    padding: 12, marginBottom: 16,
+  },
+  notSavedText: { fontSize: 13, color: "#92400e", lineHeight: 18 },
   scoreBlock: { flexDirection: "row", alignItems: "flex-end", justifyContent: "center", marginBottom: 8 },
   scoreNum: { fontSize: 88, fontWeight: "700", lineHeight: 96 },
   scoreOf: { fontSize: 22, color: "#888", marginBottom: 14, marginLeft: 4 },

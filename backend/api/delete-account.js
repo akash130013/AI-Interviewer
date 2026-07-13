@@ -18,8 +18,13 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: "SUPABASE_SERVICE_ROLE_KEY not configured" });
   }
 
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.EXPO_PUBLIC_SUPABASE_URL;
+  if (!supabaseUrl) {
+    return res.status(500).json({ error: "Supabase URL not configured" });
+  }
+
   const admin = createClient(
-    process.env.EXPO_PUBLIC_SUPABASE_URL,
+    supabaseUrl,
     serviceKey,
     { auth: { autoRefreshToken: false, persistSession: false } }
   );
@@ -31,8 +36,9 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    // Delete all user interview data first
+    // Delete all user data first (service role bypasses RLS)
     await admin.from("interviews").delete().eq("user_id", user.id);
+    await admin.from("profiles").delete().eq("user_id", user.id);
 
     // Delete the auth user
     const { error } = await admin.auth.admin.deleteUser(user.id);

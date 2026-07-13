@@ -16,7 +16,9 @@ export default function InterviewScreen({ route, navigation }) {
   const [messages, setMessages] = useState([]);
   const [status, setStatus] = useState("thinking");
   const [micError, setMicError] = useState(null);
+  const [aiError, setAiError] = useState(null);
   const flatListRef = useRef(null);
+  const lastMsgsRef = useRef([]);
   const { isRecording, isTranscribing, startRecording, stopRecording } = useVoice();
 
   useEffect(() => {
@@ -24,6 +26,8 @@ export default function InterviewScreen({ route, navigation }) {
   }, []);
 
   async function callAI(msgs) {
+    lastMsgsRef.current = msgs;
+    setAiError(null);
     setStatus("thinking");
     try {
       const reply = await sendMessage(msgs, candidateContext);
@@ -49,6 +53,11 @@ export default function InterviewScreen({ route, navigation }) {
       });
     } catch (err) {
       console.error("AI call failed:", err);
+      setAiError(
+        err?.status === 429
+          ? "You've hit the practice limit for now — please try again in a bit."
+          : "Connection problem — check your internet, then tap Retry."
+      );
       setStatus("idle");
     }
   }
@@ -64,14 +73,17 @@ export default function InterviewScreen({ route, navigation }) {
       ]);
     } catch (_) {}
 
+    let saved = true;
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        await saveInterview(session.user.id, candidateContext, report);
+        saved = await saveInterview(session.user.id, candidateContext, report);
       }
-    } catch (_) {}
+    } catch (_) {
+      saved = false;
+    }
 
-    navigation.navigate("Report", { report, streakCount });
+    navigation.navigate("Report", { report, streakCount, saved });
   }
 
   async function handleMicPress() {
@@ -148,7 +160,18 @@ export default function InterviewScreen({ route, navigation }) {
       />
 
       <View style={styles.controls}>
-        {micError ? (
+        {aiError ? (
+          <View style={styles.aiErrorWrap}>
+            <Text style={styles.micErrorText}>{aiError}</Text>
+            <TouchableOpacity
+              style={styles.retryBtn}
+              onPress={() => callAI(lastMsgsRef.current)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.retryBtnText}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        ) : micError ? (
           <Text style={styles.micErrorText}>{micError}</Text>
         ) : (
           <Text style={styles.statusText}>{getStatusLabel()}</Text>
@@ -196,6 +219,12 @@ const styles = StyleSheet.create({
   },
   statusText: { fontSize: 13, color: "#888" },
   micErrorText: { fontSize: 13, color: "#dc2626", textAlign: "center" },
+  aiErrorWrap: { alignItems: "center", gap: 8 },
+  retryBtn: {
+    backgroundColor: "#111", borderRadius: 10,
+    paddingHorizontal: 24, paddingVertical: 8,
+  },
+  retryBtnText: { color: "#fff", fontSize: 14, fontWeight: "600" },
   micButton: {
     width: 76, height: 76, borderRadius: 38,
     alignItems: "center", justifyContent: "center",

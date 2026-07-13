@@ -43,12 +43,23 @@ export default function HistoryScreen({ navigation }) {
 
   async function loadHistory(showLoader = true) {
     if (showLoader) setLoading(true);
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      const data = await getPastInterviews(session.user.id);
-      setInterviews(data);
+    try {
+      const timeout = new Promise((resolve) =>
+        setTimeout(() => resolve({ data: { session: null } }), 5000)
+      );
+      const { data: { session } } = await Promise.race([
+        supabase.auth.getSession(),
+        timeout,
+      ]);
+      if (session) {
+        const data = await getPastInterviews(session.user.id);
+        setInterviews(data);
+      }
+    } catch (e) {
+      console.error("loadHistory error:", e?.message);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   async function onRefresh() {

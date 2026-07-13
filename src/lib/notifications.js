@@ -8,7 +8,8 @@ import * as Device from "expo-device";
 try {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
-      shouldShowAlert: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
       shouldPlaySound: true,
       shouldSetBadge: false,
     }),
@@ -43,7 +44,11 @@ export async function scheduleDailyNotifications(streakCount = 0) {
           : "A quick 5-min mock interview keeps you sharp. Tap to start.",
         sound: true,
       },
-      trigger: { hour: 19, minute: 0, repeats: true },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DAILY,
+        hour: 19,
+        minute: 0,
+      },
     });
 
     // Streak protection — 9pm (only if streak > 1)
@@ -54,7 +59,11 @@ export async function scheduleDailyNotifications(streakCount = 0) {
           body: "You haven't practiced today. 3 questions and your streak is safe.",
           sound: true,
         },
-        trigger: { hour: 21, minute: 0, repeats: true },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DAILY,
+          hour: 21,
+          minute: 0,
+        },
       });
     }
 
@@ -65,7 +74,12 @@ export async function scheduleDailyNotifications(streakCount = 0) {
         body: "Check your interview history and see how your readiness is trending.",
         sound: false,
       },
-      trigger: { weekday: 1, hour: 10, minute: 0, repeats: true },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+        weekday: 1,
+        hour: 10,
+        minute: 0,
+      },
     });
   } catch (_) {
     // Silently ignore — notifications unavailable in Expo Go

@@ -1,18 +1,41 @@
+import { supabase } from "./supabase";
+
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export async function sendMessage(messages, candidateContext) {
-  const response = await fetch(`${API_URL}/api/chat`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages, candidateContext }),
-  });
+  const sessionTimeout = new Promise((resolve) =>
+    setTimeout(() => resolve({ data: { session: null } }), 5000)
+  );
+  const { data: { session } } = await Promise.race([
+    supabase.auth.getSession(),
+    sessionTimeout,
+  ]);
 
-  if (!response.ok) {
-    throw new Error(`API error: ${response.status}`);
+  const controller = new AbortController();
+  const abortTimer = setTimeout(() => controller.abort(), 25000);
+
+  try {
+    const response = await fetch(`${API_URL}/api/chat`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session?.access_token ?? ""}`,
+      },
+      body: JSON.stringify({ messages, candidateContext }),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const err = new Error(`API error: ${response.status}`);
+      err.status = response.status;
+      throw err;
+    }
+
+    const { reply } = await response.json();
+    return reply;
+  } finally {
+    clearTimeout(abortTimer);
   }
-
-  const { reply } = await response.json();
-  return reply;
 }
 
 export function extractReport(text) {

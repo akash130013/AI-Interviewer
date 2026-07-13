@@ -6,3 +6,6 @@ dist/
 web-build/
 android/
 ios/
+.vercel
+
+.env.local

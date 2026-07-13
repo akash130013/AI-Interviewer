@@ -28,15 +28,26 @@ export async function saveInterview(userId, candidateContext, report) {
     quick_mode: candidateContext.quickMode === true,
   };
 
-  const { error } = await supabase.from("interviews").insert({
+  const row = {
     user_id: userId,
     role: candidateContext.role,
     company: candidateContext.company || null,
     overall_score: report.overall_score,
     interview_readiness_percent: report.interview_readiness_percent,
     report: enrichedReport,
-  });
-  if (error) console.error("Failed to save interview:", error.message);
+  };
+
+  // Retry once on transient failure so a completed session isn't lost
+  let { error } = await supabase.from("interviews").insert(row);
+  if (error) {
+    console.error("Failed to save interview (attempt 1):", error.message);
+    ({ error } = await supabase.from("interviews").insert(row));
+  }
+  if (error) {
+    console.error("Failed to save interview (attempt 2):", error.message);
+    return false;
+  }
+  return true;
 }
 
 export async function deleteAllUserData(userId) {
@@ -45,6 +56,14 @@ export async function deleteAllUserData(userId) {
     .delete()
     .eq("user_id", userId);
   if (error) throw error;
+
+  // Requires a DELETE RLS policy on profiles (see supabase/rls_hardening.sql).
+  // Server-side deletion in /api/delete-account is the authoritative cleanup.
+  const { error: profileError } = await supabase
+    .from("profiles")
+    .delete()
+    .eq("user_id", userId);
+  if (profileError) console.error("Failed to delete profile:", profileError.message);
 }
 
 export async function getPastInterviews(userId) {

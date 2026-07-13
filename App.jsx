@@ -6,7 +6,7 @@ const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN || "";
 Sentry.init({
   dsn: SENTRY_DSN,
   enabled: !!SENTRY_DSN,
-  enableNativeCrashHandling: true,
+  enableNativeCrashHandling: false,
   tracesSampleRate: 0.1,
   debug: false,
 });
@@ -15,7 +15,7 @@ import "react-native-gesture-handler";
 import { useState, useEffect, Component } from "react";
 import {
   View, Text, ScrollView, TouchableOpacity,
-  LogBox, StyleSheet, Platform,
+  LogBox, StyleSheet, Platform, ActivityIndicator,
 } from "react-native";
 
 LogBox.ignoreLogs(["expo-notifications: Android Push notifications"]);
@@ -228,8 +228,15 @@ export default Sentry.wrap(function App() {
 
   useEffect(() => {
     async function init() {
+      // 6-second timeout — if getSession() hangs (stale token refresh), fall through to login
+      const timeout = new Promise((resolve) =>
+        setTimeout(() => resolve({ data: { session: null } }), 6000)
+      );
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await Promise.race([
+          supabase.auth.getSession(),
+          timeout,
+        ]);
         setSession(session);
         if (session?.user?.id) {
           const [profile] = await Promise.all([
@@ -279,7 +286,11 @@ export default Sentry.wrap(function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  if (loading) return null;
+  if (loading) return (
+    <View style={{ flex: 1, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" }}>
+      <ActivityIndicator size="large" color="#111" />
+    </View>
+  );
 
   const isAuthed = session || bypassed;
 

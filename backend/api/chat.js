@@ -1,4 +1,12 @@
 const { OpenAI } = require("openai");
+const { getUserFromRequest } = require("../lib/auth");
+const { allowRequest } = require("../lib/ratelimit");
+
+// ~8 AI calls per 6-question interview → 40/hr allows ~4-5 interviews/hr
+const RATE_LIMIT = 40;
+const RATE_WINDOW_MS = 60 * 60 * 1000;
+const MAX_MESSAGES = 40;
+const MAX_BODY_CHARS = 60000;
 
 const COMPANY_INSTRUCTIONS = {
   Amazon: `\n## Amazon-specific focus\nAll questions must be rooted in Amazon's 14 Leadership Principles (e.g. Customer Obsession, Ownership, Bias for Action, Earn Trust). Expect STAR-format answers and probe for scale, impact, and ownership. Reject vague answers with a follow-up.`,
@@ -151,15 +159,34 @@ RULE 6 — TOPIC CHANGE ON "I DON'T KNOW": If the candidate says they don't know
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") return res.status(405).end();
+
+  // Require a valid Supabase session token
+  const user = await getUserFromRequest(req);
+  if (!user) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  // Per-user rate limit
+  if (!allowRequest(`${user.id}:chat`, RATE_LIMIT, RATE_WINDOW_MS)) {
+    return res.status(429).json({ error: "Too many requests — please try again later" });
+  }
 
   const { messages, candidateContext } = req.body;
 
   if (!messages || !candidateContext) {
     return res.status(400).json({ error: "Missing messages or candidateContext" });
+  }
+
+  // Payload sanity limits
+  if (!Array.isArray(messages) || messages.length > MAX_MESSAGES) {
+    return res.status(400).json({ error: "Invalid messages payload" });
+  }
+  if (JSON.stringify(req.body).length > MAX_BODY_CHARS) {
+    return res.status(413).json({ error: "Payload too large" });
   }
 
   if (!process.env.GROQ_API_KEY) {

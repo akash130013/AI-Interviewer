@@ -8,7 +8,7 @@ import { supabase, deleteAllUserData } from "../lib/supabase";
 import { getLogs, clearLogs } from "../lib/crashLog";
 
 const APP_VERSION = "1.0.0";
-const CONTACT_EMAIL = "richamediahub@gmail.com";
+const CONTACT_EMAIL = "richmediahub@gmail.com";
 const SHARE_MESSAGE =
   "⛵ I've been using *Interview Boat* to practice job interviews with AI!\n\n" +
   "It asks real interview questions, scores your answers, and gives detailed feedback — like having a personal interview coach.\n\n" +
@@ -126,23 +126,25 @@ export default function SettingsScreen({ navigation }) {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      // Delete all interview data (client-side, RLS-protected)
-      await deleteAllUserData(session.user.id);
+      // Server endpoint deletes interviews + profile + auth user (service role)
+      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/delete-account`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
 
-      // Delete auth user via server endpoint
-      try {
-        await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/delete-account`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        });
-      } catch (_) {
-        // Server deletion failed — data is cleared, proceed with sign-out
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || `Server error ${res.status}`);
       }
 
-      // Sign out — triggers auth state change → app navigates to login
+      // Best-effort local cleanup, then sign out → app navigates to login
+      try { await deleteAllUserData(session.user.id); } catch (_) {}
       await supabase.auth.signOut();
     } catch (err) {
-      Alert.alert("Error", "Something went wrong. Please try again.");
+      Alert.alert(
+        "Couldn't delete account",
+        `Please check your connection and try again. If it keeps failing, email us at ${CONTACT_EMAIL}.`
+      );
     }
   }
 
@@ -223,6 +225,15 @@ export default function SettingsScreen({ navigation }) {
             icon="🚪"
             label="Sign Out"
             onPress={handleSignOut}
+            destructive
+            showArrow={false}
+          />
+          <Divider />
+          <Row
+            icon="🗑"
+            label="Delete Account"
+            subtitle="Permanently delete your account and all data"
+            onPress={handleDeleteAccount}
             destructive
             showArrow={false}
           />
