@@ -315,8 +315,11 @@ export default function DashboardScreen({ navigation }) {
 
   async function loadData() {
     try {
+      const sessionTimeout = new Promise((resolve) =>
+        setTimeout(() => resolve({ data: { session: null } }), 5000)
+      );
       const [{ data: { session } }, prog, streakData] = await Promise.all([
-        supabase.auth.getSession(),
+        Promise.race([supabase.auth.getSession(), sessionTimeout]),
         getAllProgress(),
         getStreakData(),
       ]);
