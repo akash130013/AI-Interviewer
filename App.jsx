@@ -26,7 +26,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
-import { supabase } from "./src/lib/supabase";
+import { supabase, getSessionSafe } from "./src/lib/supabase";
 import { scheduleDailyNotifications } from "./src/lib/notifications";
 import { getStreakData } from "./src/lib/streak";
 import { getProfile } from "./src/lib/profile";
@@ -228,15 +228,13 @@ export default Sentry.wrap(function App() {
 
   useEffect(() => {
     async function init() {
-      // 6-second timeout — if getSession() hangs (stale token refresh), fall through to login
-      const timeout = new Promise((resolve) =>
-        setTimeout(() => resolve({ data: { session: null } }), 6000)
-      );
+      // getSessionSafe() reads from the module-level cache populated by
+      // onAuthStateChange(INITIAL_SESSION) — returns instantly even when
+      // the access token is expired and needs a background refresh.
+      // This prevents the app from falling through to the login screen
+      // just because a network-based token refresh is slow.
       try {
-        const { data: { session } } = await Promise.race([
-          supabase.auth.getSession(),
-          timeout,
-        ]);
+        const session = await getSessionSafe();
         setSession(session);
         if (session?.user?.id) {
           const [profile] = await Promise.all([
