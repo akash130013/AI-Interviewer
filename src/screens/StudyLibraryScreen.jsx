@@ -39,7 +39,13 @@ export default function StudyLibraryScreen({ navigation }) {
     setLoading(true);
     setError(null);
     try {
-      const [cats, prog] = await Promise.all([getStudyCategories(), getAllProgress()]);
+      const loadTimeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Request timed out")), 10000)
+      );
+      const [cats, prog] = await Promise.race([
+        Promise.all([getStudyCategories(), getAllProgress()]),
+        loadTimeout,
+      ]);
       setCategories(cats);
       setProgress(prog);
     } catch (e) {

@@ -12,7 +12,8 @@
         "EXPO_PUBLIC_SUPABASE_URL": "https://rolidiycsmwexuolyter.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_Rlz8AZZrAekOi0IcgUthTA_Hn_TVyoc",
         "EXPO_PUBLIC_API_URL": "https://ai-interviewer-backend-lac.vercel.app",
-        "EXPO_PUBLIC_SENTRY_DSN": "https://989380a0754c849ab82175a2242a4e14@o4511714717007872.ingest.de.sentry.io/4511714762031184"
+        "EXPO_PUBLIC_SENTRY_DSN": "https://989380a0754c849ab82175a2242a4e14@o4511714717007872.ingest.de.sentry.io/4511714762031184",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     },
     "production": {
@@ -23,7 +24,8 @@
         "EXPO_PUBLIC_SUPABASE_URL": "https://rolidiycsmwexuolyter.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_Rlz8AZZrAekOi0IcgUthTA_Hn_TVyoc",
         "EXPO_PUBLIC_API_URL": "https://ai-interviewer-backend-lac.vercel.app",
-        "EXPO_PUBLIC_SENTRY_DSN": "https://989380a0754c849ab82175a2242a4e14@o4511714717007872.ingest.de.sentry.io/4511714762031184"
+        "EXPO_PUBLIC_SENTRY_DSN": "https://989380a0754c849ab82175a2242a4e14@o4511714717007872.ingest.de.sentry.io/4511714762031184",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     }
   }

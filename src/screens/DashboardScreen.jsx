@@ -293,6 +293,17 @@ export default function DashboardScreen({ navigation }) {
 
   const challenge = useMemo(() => getDailyChallenge(jobCategory), [jobCategory]);
 
+  // Get email immediately from auth state (fires before getSession resolves)
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user?.email) setEmail(session.user.email);
+    }).catch(() => {});
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user?.email) setEmail(session.user.email);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
   // Categories: load once from Supabase on mount
   useEffect(() => {
     getStudyCategories()
