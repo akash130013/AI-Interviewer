@@ -5,7 +5,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
-import { supabase, getPastInterviews } from "../lib/supabase";
+import { supabase, getPastInterviews, getSessionSafe, onSessionEvent } from "../lib/supabase";
 import { getStreakData } from "../lib/streak";
 import { getAllProgress } from "../lib/studyProgress";
 import { getStudyCategories } from "../lib/study";
@@ -293,15 +293,12 @@ export default function DashboardScreen({ navigation }) {
 
   const challenge = useMemo(() => getDailyChallenge(jobCategory), [jobCategory]);
 
-  // Get email immediately from auth state (fires before getSession resolves)
+  // Reload data when token refreshes (handles "blank after 1 hour" bug)
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    return onSessionEvent((event, session) => {
       if (session?.user?.email) setEmail(session.user.email);
-    }).catch(() => {});
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user?.email) setEmail(session.user.email);
+      if (event === "TOKEN_REFRESHED") loadData();
     });
-    return () => subscription.unsubscribe();
   }, []);
 
   // Categories: load once from Supabase on mount
@@ -326,11 +323,8 @@ export default function DashboardScreen({ navigation }) {
 
   async function loadData() {
     try {
-      const sessionTimeout = new Promise((resolve) =>
-        setTimeout(() => resolve({ data: { session: null } }), 5000)
-      );
-      const [{ data: { session } }, prog, streakData] = await Promise.all([
-        Promise.race([supabase.auth.getSession(), sessionTimeout]),
+      const [session, prog, streakData] = await Promise.all([
+        getSessionSafe(),
         getAllProgress(),
         getStreakData(),
       ]);

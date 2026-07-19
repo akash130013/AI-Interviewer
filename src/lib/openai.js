@@ -1,15 +1,9 @@
-import { supabase } from "./supabase";
+import { getSessionSafe } from "./supabase";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export async function sendMessage(messages, candidateContext) {
-  const sessionTimeout = new Promise((resolve) =>
-    setTimeout(() => resolve({ data: { session: null } }), 5000)
-  );
-  const { data: { session } } = await Promise.race([
-    supabase.auth.getSession(),
-    sessionTimeout,
-  ]);
+  const session = await getSessionSafe();
 
   const controller = new AbortController();
   const abortTimer = setTimeout(() => controller.abort(), 25000);

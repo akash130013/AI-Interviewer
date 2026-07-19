@@ -1,5 +1,5 @@
 import * as FileSystem from "expo-file-system/legacy";
-import { supabase } from "./supabase";
+import { getSessionSafe } from "./supabase";
 
 // Transcription now goes through our backend proxy (/api/transcribe) so the
 // Deepgram API key never ships inside the app bundle.
@@ -14,7 +14,7 @@ export async function transcribeAudio(fileUri) {
       return "";
     }
 
-    const { data: { session } } = await supabase.auth.getSession();
+    const session = await getSessionSafe();
     if (!session?.access_token) {
       console.warn("No session — cannot transcribe");
       return "";

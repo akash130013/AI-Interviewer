@@ -1,11 +1,11 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   View, Text, FlatList, ScrollView, TouchableOpacity,
   StyleSheet, ActivityIndicator, RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
-import { supabase, getPastInterviews } from "../lib/supabase";
+import { supabase, getPastInterviews, getSessionSafe, onSessionEvent } from "../lib/supabase";
 import LineGraph from "../components/LineGraph";
 
 const TYPE_META = {
@@ -35,6 +35,13 @@ export default function HistoryScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Reload when token refreshes (handles "blank after 1 hour" bug)
+  useEffect(() => {
+    return onSessionEvent((event) => {
+      if (event === "TOKEN_REFRESHED") loadHistory();
+    });
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       loadHistory();
@@ -44,13 +51,7 @@ export default function HistoryScreen({ navigation }) {
   async function loadHistory(showLoader = true) {
     if (showLoader) setLoading(true);
     try {
-      const timeout = new Promise((resolve) =>
-        setTimeout(() => resolve({ data: { session: null } }), 5000)
-      );
-      const { data: { session } } = await Promise.race([
-        supabase.auth.getSession(),
-        timeout,
-      ]);
+      const session = await getSessionSafe();
       if (session) {
         const data = await getPastInterviews(session.user.id);
         setInterviews(data);

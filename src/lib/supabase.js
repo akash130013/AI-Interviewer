@@ -19,6 +19,39 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   },
 });
 
+// ── Session cache ─────────────────────────────────────────────────────────────
+// getSession() can hang for 5-30s when the token needs refreshing.
+// We cache the session here and update it via onAuthStateChange (which fires
+// with INITIAL_SESSION on startup, then TOKEN_REFRESHED when token rotates).
+// Screens call getSessionSafe() instead of getSession() — instant return.
+
+let _cachedSession = undefined; // undefined = not yet initialized
+const _pendingResolvers = [];
+
+supabase.auth.onAuthStateChange((event, session) => {
+  const firstLoad = _cachedSession === undefined;
+  _cachedSession = session;
+  if (firstLoad) {
+    _pendingResolvers.forEach((r) => r(session));
+    _pendingResolvers.length = 0;
+  }
+});
+
+// Returns the cached session immediately, or waits up to 5s for first load.
+export async function getSessionSafe() {
+  if (_cachedSession !== undefined) return _cachedSession;
+  return Promise.race([
+    new Promise((r) => _pendingResolvers.push(r)),
+    new Promise((r) => setTimeout(() => r(null), 5000)),
+  ]);
+}
+
+// Subscribe to all auth events. Returns an unsubscribe function.
+export function onSessionEvent(callback) {
+  const { data: { subscription } } = supabase.auth.onAuthStateChange(callback);
+  return () => subscription.unsubscribe();
+}
+
 export async function saveInterview(userId, candidateContext, report) {
   // Embed context into the report JSONB so history cards can show type + skills
   const enrichedReport = {

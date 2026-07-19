@@ -4,7 +4,7 @@ import {
   ScrollView, Alert, Linking, Share, Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { supabase, deleteAllUserData } from "../lib/supabase";
+import { supabase, deleteAllUserData, getSessionSafe } from "../lib/supabase";
 import { getLogs, clearLogs } from "../lib/crashLog";
 
 const APP_VERSION = "1.0.0";
@@ -57,7 +57,7 @@ export default function SettingsScreen({ navigation }) {
   const versionTimer  = useRef(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    getSessionSafe().then((session) => {
       setEmail(session?.user?.email ?? "");
     });
   }, []);

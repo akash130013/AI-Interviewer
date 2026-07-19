@@ -1,9 +1,9 @@
 import * as SecureStore from "expo-secure-store";
-import { supabase } from "./supabase";
+import { getSessionSafe } from "./supabase";
 
 async function getKey() {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
+    const session = await getSessionSafe();
     const uid = session?.user?.id;
     return uid ? `study_progress_${uid}` : "study_progress";
   } catch {
