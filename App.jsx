@@ -228,20 +228,33 @@ export default Sentry.wrap(function App() {
 
   useEffect(() => {
     async function init() {
-      // getSessionSafe() reads from the module-level cache populated by
-      // onAuthStateChange(INITIAL_SESSION) — returns instantly even when
-      // the access token is expired and needs a background refresh.
-      // This prevents the app from falling through to the login screen
-      // just because a network-based token refresh is slow.
+      // Safety net: no matter what hangs below, clear the loading screen
+      // within 6 seconds so the user is never stuck on a spinner.
+      const safetyTimer = setTimeout(() => {
+        setProfileDone(true);
+        setLoading(false);
+      }, 6000);
+
       try {
+        // getSessionSafe() reads from the module-level cache (INITIAL_SESSION)
+        // — returns instantly even when the token needs a background refresh.
         const session = await getSessionSafe();
         setSession(session);
+
         if (session?.user?.id) {
-          const [profile] = await Promise.all([
-            getProfile(session.user.id),
-            getStreakData()
-              .then(({ count }) => scheduleDailyNotifications(count))
-              .catch(() => {}),
+          // Wrap profile + streak in a 5s timeout so a slow network never
+          // blocks the loading screen indefinitely.
+          const profileTimeout = new Promise((resolve) =>
+            setTimeout(() => resolve([null]), 5000)
+          );
+          const [profile] = await Promise.race([
+            Promise.all([
+              getProfile(session.user.id),
+              getStreakData()
+                .then(({ count }) => scheduleDailyNotifications(count))
+                .catch(() => {}),
+            ]),
+            profileTimeout,
           ]);
           setProfileDone(profile?.setup_done === true);
         } else {
@@ -254,6 +267,7 @@ export default Sentry.wrap(function App() {
         if (SENTRY_DSN) Sentry.captureException(e);
         setProfileDone(true);
       } finally {
+        clearTimeout(safetyTimer);
         setLoading(false);
       }
     }
