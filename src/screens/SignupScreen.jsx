@@ -51,6 +51,9 @@ export default function SignupScreen({ navigation }) {
 
     if (err) {
       setError(err.message);
+    } else if (data?.user?.identities?.length === 0) {
+      // Supabase returns no error for duplicate emails — identities=[] reveals it
+      setError("An account with this email already exists. Please log in instead.");
     } else if (data?.session) {
       // Email confirmation disabled — session change in App.jsx handles navigation
     } else {
