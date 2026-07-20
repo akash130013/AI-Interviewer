@@ -273,25 +273,40 @@ export default Sentry.wrap(function App() {
     }
     init();
 
+    // CRITICAL: this callback must stay SYNCHRONOUS. supabase-js holds an
+    // internal auth lock while notifying subscribers and awaits each callback.
+    // Awaiting any supabase call here (getProfile, queries, getSession) makes
+    // that call wait for the same lock → permanent deadlock → every screen
+    // hangs on the 2nd app open. Real work is deferred via setTimeout(0) so
+    // it runs AFTER the lock is released. Do not make this callback async.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        try {
-          setSession(session);
-          if (session?.user?.id) {
-            const profile = await getProfile(session.user.id);
-            setProfileDone(profile?.setup_done === true);
-            getStreakData()
-              .then(({ count }) => scheduleDailyNotifications(count))
-              .catch(() => {});
-          } else {
+      (event, session) => {
+        setSession(session);
+
+        // init() already handles the startup session; token refreshes and
+        // user-metadata updates don't change profile setup state.
+        if (event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {
+          return;
+        }
+
+        setTimeout(async () => {
+          try {
+            if (session?.user?.id) {
+              const profile = await getProfile(session.user.id);
+              setProfileDone(profile?.setup_done === true);
+              getStreakData()
+                .then(({ count }) => scheduleDailyNotifications(count))
+                .catch(() => {});
+            } else {
+              setProfileDone(true);
+            }
+          } catch (e) {
+            const msg = e?.message || "auth state change failed";
+            console.error("Auth state change error:", msg);
+            logError("AUTH", msg, e?.stack);
             setProfileDone(true);
           }
-        } catch (e) {
-          const msg = e?.message || "auth state change failed";
-          console.error("Auth state change error:", msg);
-          logError("AUTH", msg, e?.stack);
-          setProfileDone(true);
-        }
+        }, 0);
       }
     );
 
