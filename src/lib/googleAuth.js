@@ -1,21 +1,24 @@
 import * as WebBrowser from "expo-web-browser";
-import { makeRedirectUri } from "expo-auth-session";
 import { supabase } from "./supabase";
 
 WebBrowser.maybeCompleteAuthSession();
 
-export async function signInWithGoogle() {
-  const redirectTo = makeRedirectUri({ scheme: "interviewboat", path: "auth/callback" });
+// Hardcoded deep link — must match Supabase allowed redirect URLs
+const REDIRECT_URL = "interviewboat://auth/callback";
 
+export async function signInWithGoogle() {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
-    options: { redirectTo, skipBrowserRedirect: true },
+    options: {
+      redirectTo: REDIRECT_URL,
+      skipBrowserRedirect: true,
+    },
   });
 
   if (error) throw error;
   if (!data?.url) throw new Error("No OAuth URL returned");
 
-  const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+  const result = await WebBrowser.openAuthSessionAsync(data.url, REDIRECT_URL);
 
   if (result.type === "success" && result.url) {
     const { error: sessionError } = await supabase.auth.exchangeCodeForSession(result.url);
@@ -23,5 +26,9 @@ export async function signInWithGoogle() {
     return true;
   }
 
-  return false; // user cancelled
+  if (result.type === "cancel" || result.type === "dismiss") {
+    return false;
+  }
+
+  return false;
 }
