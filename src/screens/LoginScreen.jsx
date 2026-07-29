@@ -5,12 +5,14 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../lib/supabase";
+import { signInWithGoogle } from "../lib/googleAuth";
 
 export default function LoginScreen({ navigation, onBypass }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState(null);
   const [resetSent, setResetSent] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
@@ -54,6 +56,18 @@ export default function LoginScreen({ navigation, onBypass }) {
       }
     }
     // On success: session change in App.jsx swaps navigator automatically
+  }
+
+  async function handleGoogleSignIn() {
+    setError(null);
+    setGoogleLoading(true);
+    try {
+      await signInWithGoogle();
+    } catch (e) {
+      setError(e?.message || "Google sign-in failed. Please try again.");
+    } finally {
+      setGoogleLoading(false);
+    }
   }
 
   return (
@@ -142,7 +156,29 @@ export default function LoginScreen({ navigation, onBypass }) {
               )}
             </TouchableOpacity>
 
-            {/* Google login — re-enable once OAuth is configured in Supabase */}
+            {/* Divider */}
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            {/* Google Sign-In */}
+            <TouchableOpacity
+              style={[styles.googleBtn, googleLoading && styles.btnDisabled]}
+              onPress={handleGoogleSignIn}
+              disabled={googleLoading}
+              activeOpacity={0.85}
+            >
+              {googleLoading ? (
+                <ActivityIndicator color="#333" />
+              ) : (
+                <>
+                  <Text style={styles.googleIcon}>G</Text>
+                  <Text style={styles.googleBtnText}>Continue with Google</Text>
+                </>
+              )}
+            </TouchableOpacity>
           </View>
 
           {/* Sign up link */}
@@ -208,6 +244,21 @@ const styles = StyleSheet.create({
   },
   btnDisabled: { opacity: 0.5 },
   primaryBtnText: { fontSize: 16, fontWeight: "700", color: "#fff" },
+
+  dividerRow: { flexDirection: "row", alignItems: "center", marginTop: 20, marginBottom: 4 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: "#e8e8e8" },
+  dividerText: { marginHorizontal: 12, fontSize: 13, color: "#aaa" },
+
+  googleBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+    borderWidth: 1.5, borderColor: "#e0e0e0", borderRadius: 14,
+    paddingVertical: 14, marginTop: 12, backgroundColor: "#fff",
+  },
+  googleIcon: {
+    fontSize: 17, fontWeight: "700", color: "#4285F4",
+    marginRight: 10, fontFamily: "serif",
+  },
+  googleBtnText: { fontSize: 15, fontWeight: "600", color: "#333" },
 
   signupRow: { flexDirection: "row", justifyContent: "center", marginBottom: 20 },
   signupText: { fontSize: 14, color: "#888" },

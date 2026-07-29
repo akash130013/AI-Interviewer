@@ -5,6 +5,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../lib/supabase";
+import { signInWithGoogle } from "../lib/googleAuth";
 
 function validateEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -17,6 +18,7 @@ export default function SignupScreen({ navigation }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState(null);
   const [verified, setVerified] = useState(false);
   const [resending, setResending] = useState(false);
@@ -212,6 +214,36 @@ export default function SignupScreen({ navigation }) {
                 <Text style={styles.primaryBtnText}>Create Account</Text>
               )}
             </TouchableOpacity>
+
+            {/* Divider */}
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            {/* Google Sign-Up */}
+            <TouchableOpacity
+              style={[styles.googleBtn, googleLoading && styles.btnDisabled]}
+              onPress={async () => {
+                setError(null);
+                setGoogleLoading(true);
+                try { await signInWithGoogle(); }
+                catch (e) { setError(e?.message || "Google sign-in failed."); }
+                finally { setGoogleLoading(false); }
+              }}
+              disabled={googleLoading}
+              activeOpacity={0.85}
+            >
+              {googleLoading ? (
+                <ActivityIndicator color="#333" />
+              ) : (
+                <>
+                  <Text style={styles.googleIcon}>G</Text>
+                  <Text style={styles.googleBtnText}>Continue with Google</Text>
+                </>
+              )}
+            </TouchableOpacity>
           </View>
 
           {/* Login link */}
@@ -271,6 +303,21 @@ const styles = StyleSheet.create({
   },
   btnDisabled: { opacity: 0.5 },
   primaryBtnText: { fontSize: 16, fontWeight: "700", color: "#fff" },
+
+  dividerRow: { flexDirection: "row", alignItems: "center", marginTop: 20, marginBottom: 4 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: "#e8e8e8" },
+  dividerText: { marginHorizontal: 12, fontSize: 13, color: "#aaa" },
+
+  googleBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+    borderWidth: 1.5, borderColor: "#e0e0e0", borderRadius: 14,
+    paddingVertical: 14, marginTop: 12, backgroundColor: "#fff",
+  },
+  googleIcon: {
+    fontSize: 17, fontWeight: "700", color: "#4285F4",
+    marginRight: 10, fontFamily: "serif",
+  },
+  googleBtnText: { fontSize: 15, fontWeight: "600", color: "#333" },
 
   loginRow: { flexDirection: "row", justifyContent: "center", marginBottom: 20 },
   loginText: { fontSize: 14, color: "#888" },
