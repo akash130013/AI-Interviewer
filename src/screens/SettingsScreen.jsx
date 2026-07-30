@@ -7,7 +7,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase, deleteAllUserData, getSessionSafe } from "../lib/supabase";
 import { getLogs, clearLogs } from "../lib/crashLog";
 
-const APP_VERSION = "1.0.0";
+const APP_VERSION = "1.0.2";
 const CONTACT_EMAIL = "richmediahub@gmail.com";
 const SHARE_MESSAGE =
   "⛵ I've been using *Interview Boat* to practice job interviews with AI!\n\n" +
@@ -123,7 +123,7 @@ export default function SettingsScreen({ navigation }) {
 
   async function confirmDeleteAccount() {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const session = await getSessionSafe();
       if (!session) return;
 
       // Server endpoint deletes interviews + profile + auth user (service role)
