@@ -23,21 +23,24 @@ export async function signInWithGoogle() {
   if (result.type === "success" && result.url) {
     const url = result.url;
 
-    if (url.includes("code=")) {
-      // PKCE flow — exchange the code for a session
-      const { error: sessionError } = await supabase.auth.exchangeCodeForSession(url);
-      if (sessionError) throw sessionError;
-    } else if (url.includes("access_token=")) {
-      // Implicit flow fallback — extract tokens from the URL hash
-      const hash = url.split("#")[1] || "";
+    if (url.includes("access_token=")) {
+      // Implicit flow — tokens are in the URL hash fragment
+      const hash = url.split("#")[1] || url.split("?")[1] || "";
       const params = new URLSearchParams(hash);
       const accessToken = params.get("access_token");
       const refreshToken = params.get("refresh_token");
-      if (!accessToken || !refreshToken) throw new Error("Missing tokens in redirect URL");
-      const { error: sessionError } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+      if (!accessToken || !refreshToken) throw new Error("Missing tokens in OAuth redirect");
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+      if (sessionError) throw sessionError;
+    } else if (url.includes("code=")) {
+      // PKCE flow fallback
+      const { error: sessionError } = await supabase.auth.exchangeCodeForSession(url);
       if (sessionError) throw sessionError;
     } else {
-      throw new Error("Unrecognized OAuth callback format");
+      throw new Error("No tokens or code in OAuth redirect URL");
     }
 
     return true;
