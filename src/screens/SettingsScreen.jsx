@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase, deleteAllUserData, getSessionSafe } from "../lib/supabase";
 import { getLogs, clearLogs } from "../lib/crashLog";
+import { getSubscriptionTier } from "../lib/subscription";
 
 const APP_VERSION = "1.0.2";
 const CONTACT_EMAIL = "richmediahub@gmail.com";
@@ -51,14 +52,19 @@ function Divider() {
 
 export default function SettingsScreen({ navigation }) {
   const [email,       setEmail]       = useState("");
+  const [tier,        setTier]        = useState("free");
   const [debugMode,   setDebugMode]   = useState(false);
   const [crashLogs,   setCrashLogs]   = useState([]);
   const versionTaps   = useRef(0);
   const versionTimer  = useRef(null);
 
   useEffect(() => {
-    getSessionSafe().then((session) => {
+    getSessionSafe().then(async (session) => {
       setEmail(session?.user?.email ?? "");
+      if (session?.user?.id) {
+        const t = await getSubscriptionTier(session.user.id);
+        setTier(t);
+      }
     });
   }, []);
 
@@ -171,12 +177,26 @@ export default function SettingsScreen({ navigation }) {
             </View>
             <View style={styles.profileInfo}>
               <Text style={styles.profileEmail} numberOfLines={1}>{email}</Text>
-              <View style={styles.planBadge}>
-                <Text style={styles.planText}>Free Plan</Text>
+              <View style={[styles.planBadge, tier !== "free" && styles.planBadgePaid]}>
+                <Text style={[styles.planText, tier !== "free" && styles.planTextPaid]}>
+                  {tier === "elite" ? "👑 Elite" : tier === "pro" ? "🚀 Pro" : "Free Plan"}
+                </Text>
               </View>
             </View>
           </View>
         </Section>
+
+        {/* Upgrade — only show for free users */}
+        {tier === "free" && (
+          <Section title="SUBSCRIPTION">
+            <Row
+              icon="🚀"
+              label="Upgrade to Pro"
+              subtitle="Unlimited interviews, radar chart, progress graph — from $9.99/mo"
+              onPress={() => navigation.navigate("Plans", { currentTier: tier })}
+            />
+          </Section>
+        )}
 
         {/* Practice */}
         <Section title="PRACTICE">
@@ -313,7 +333,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#f0f0f0", borderRadius: 20,
     paddingHorizontal: 10, paddingVertical: 3,
   },
-  planText: { fontSize: 11, fontWeight: "600", color: "#666" },
+  planBadgePaid: { backgroundColor: "#111" },
+  planText:     { fontSize: 11, fontWeight: "600", color: "#666" },
+  planTextPaid: { color: "#fff" },
 
   row: {
     flexDirection: "row", alignItems: "center",

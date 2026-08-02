@@ -7,7 +7,8 @@ import { useFocusEffect } from "@react-navigation/native";
 import * as SecureStore from "expo-secure-store";
 import { getStreakData } from "../lib/streak";
 import { getProfile } from "../lib/profile";
-import { supabase } from "../lib/supabase";
+import { supabase, getSessionSafe } from "../lib/supabase";
+import { canStartInterview } from "../lib/subscription";
 
 // ─── Preset role list (shown in dropdown) ────────────────────────────────────
 
@@ -296,12 +297,18 @@ export default function OnboardingScreen({ navigation }) {
     setShowRoleSuggestions(false);
   }
 
-  function handleStart(quickMode = false) {
+  async function handleStart(quickMode = false) {
     if (!form.role.trim()) {
       Alert.alert("Required", "Please enter the role you are applying for.");
       return;
     }
-    navigation.navigate("Interview", { candidateContext: { ...form, quickMode } });
+    const session = await getSessionSafe();
+    const { allowed, tier, used, limit } = await canStartInterview(session?.user?.id);
+    if (!allowed) {
+      navigation.navigate("Paywall", { currentTier: tier, used, limit });
+      return;
+    }
+    navigation.navigate("Interview", { candidateContext: { ...form, quickMode }, subscriptionTier: tier });
   }
 
   // Roles to show in dropdown — filtered by what's typed

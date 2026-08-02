@@ -12,7 +12,7 @@ import { recordInterviewToday } from "../lib/streak";
 import { notifyInterviewComplete, scheduleDailyNotifications } from "../lib/notifications";
 
 export default function InterviewScreen({ route, navigation }) {
-  const { candidateContext } = route.params;
+  const { candidateContext, subscriptionTier = "free" } = route.params;
   const [messages, setMessages] = useState([]);
   const [status, setStatus] = useState("thinking");
   const [micError, setMicError] = useState(null);
@@ -83,7 +83,14 @@ export default function InterviewScreen({ route, navigation }) {
       saved = false;
     }
 
-    navigation.navigate("Report", { report, streakCount, saved });
+    navigation.navigate("Report", {
+      report,
+      streakCount,
+      saved,
+      subscriptionTier,
+      role:    candidateContext.role    ?? "",
+      company: candidateContext.company ?? "",
+    });
   }
 
   async function handleMicPress() {

@@ -45,6 +45,8 @@ import StudyTopicListScreen from "./src/screens/StudyTopicListScreen";
 import StudyTopicScreen from "./src/screens/StudyTopicScreen";
 import SettingsScreen from "./src/screens/SettingsScreen";
 import FAQScreen from "./src/screens/FAQScreen";
+import PlansScreen from "./src/screens/PlansScreen";
+import PaywallScreen from "./src/screens/PaywallScreen";
 
 const Stack = createStackNavigator();
 const Tab   = createBottomTabNavigator();
@@ -148,8 +150,10 @@ function PracticeStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+      <Stack.Screen name="Paywall"    component={PaywallScreen} />
       <Stack.Screen name="Interview"  component={InterviewScreen} />
       <Stack.Screen name="Report"     component={ReportScreen} />
+      <Stack.Screen name="Plans"      component={PlansScreen} />
     </Stack.Navigator>
   );
 }
@@ -173,6 +177,7 @@ function SettingsStack() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="SettingsMain" component={SettingsScreen} />
       <Stack.Screen name="FAQ"          component={FAQScreen} />
+      <Stack.Screen name="Plans"        component={PlansScreen} />
     </Stack.Navigator>
   );
 }
